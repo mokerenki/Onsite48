@@ -1,0 +1,28 @@
+groups:
+  - name: onsite48-platform
+    rules:
+      - alert: Onsite48QueueBacklogGrowing
+        expr: onsite48_queue_oldest_age_seconds > 300
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Onsite48 queue has an old task", runbook: "docs/OPERATIONS_RECOVERY.md"}
+      - alert: Onsite48TaskWorkerMissing
+        expr: sum(onsite48_worker_running) < 1
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: "No durable task worker is reporting", runbook: "docs/OPERATIONS_RECOVERY.md"}
+      - alert: Onsite48ProviderFailureRateHigh
+        expr: sum(rate(onsite48_model_failures_total[10m])) / clamp_min(sum(rate(onsite48_model_calls_total[10m])), 0.001) > 0.25
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Model provider failure rate exceeds 25%"}
+      - alert: Onsite48ApprovalInboxStale
+        expr: onsite48_approval_oldest_age_seconds > 3600
+        for: 15m
+        labels: {severity: warning}
+        annotations: {summary: "Approval inbox contains an item older than one hour"}
+      - alert: Onsite48BackupStale
+        expr: time() - onsite48_backup_last_success_timestamp > 7200
+        for: 15m
+        labels: {severity: critical}
+        annotations: {summary: "Latest verified backup is older than two hours"}

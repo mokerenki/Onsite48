@@ -1,0 +1,13 @@
+id: comp-ws-010
+tier: computer
+goal: >
+  Write a shell script tools/run.sh that echoes SUCCESS and execute it; capture stdout to out/run.log.
+max_steps: 25
+max_cost_usd: 0.6
+grader:
+  type: exact_answer
+  expect:
+    value: "SUCCESS"
+tags:
+- computer
+- workspace

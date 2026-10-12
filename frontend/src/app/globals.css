@@ -1,0 +1,67 @@
+/* frontend/src/app/globals.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light theme - Manus style */
+    --background: #ffffff;
+    --surface: #f7f7f8;
+    --surface-light: #f0f0f1;
+    --surface-hover: #e8e8ea;
+    --border: #e4e4e7;
+    --text-primary: #1a1a1e;
+    --text-secondary: #4a4a50;
+    --text-muted: #8a8a90;
+    
+    /* Brand Colors - Clean blue like Manus */
+    --brand-primary: #2563eb;
+    --brand-primary-dark: #1d4ed8;
+    --brand-primary-light: #60a5fa;
+    --brand-secondary: #7c3aed;
+    --brand-accent: #8b5cf6;
+    --brand-gradient: linear-gradient(135deg, #2563eb, #7c3aed);
+    
+    /* Status Colors */
+    --status-success: #22c55e;
+    --status-warning: #eab308;
+    --status-error: #ef4444;
+    --status-info: #3b82f6;
+  }
+  
+  * {
+    border-color: var(--border);
+  }
+  
+  body {
+    @apply bg-white text-[#1a1a1e] antialiased;
+  }
+}
+
+@layer components {
+  /* Gradient text utility - keep for brand */
+  .text-gradient {
+    @apply bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent;
+  }
+  
+  /* Subtle card shadow like Manus */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:border-gray-300;
+  }
+  
+  /* Gradient button - Manus style blue */
+  .btn-gradient {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200;
+  }
+  
+  /* Sidebar item active state */
+  .sidebar-item-active {
+    @apply bg-blue-50 text-blue-700 border-r-2 border-blue-600;
+  }
+  
+  .sidebar-item {
+    @apply text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors;
+  }
+}

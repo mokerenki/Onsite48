@@ -1,0 +1,79 @@
+# Aether — Full Stack Requirements (Phase 0 → Phase 2)
+# Python 3.12+
+#
+# Version pins marked with "← pinned" are exact-version pins chosen to
+# short-circuit pip's dependency resolver, which previously back-
+# tracked through hundreds of litellm/opik/instructor versions
+# (10+ min) caused by loose >= constraints in cognee & browser-use.
+
+# ── Core Framework ─────────────────────────────────────────────
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+websockets>=13.0
+pydantic>=2.9.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
+structlog>=24.4.0
+httpx>=0.27.0
+beautifulsoup4>=4.12.0
+apscheduler>=3.10.0
+
+# ── LangGraph & LLMs ────────────────────────────────────────────
+# ← pinned to prevent resolver backtracking
+langgraph==1.2.11
+langchain==1.4.0
+langchain-core==1.6.1
+openai==2.54.0
+mcp==2.1.1
+PyYAML>=6.0
+
+# ── Database & Checkpointing ────────────────────────────────────
+psycopg[binary]>=3.2.0
+sqlalchemy>=2.0.0
+redis>=5.0.0
+asyncpg>=0.30.0
+alembic>=1.14.0
+
+# ── Memory (Phase 1) ────────────────────────────────────────────
+cognee==1.5.3
+qdrant-client>=1.12.0
+kuzu>=0.6.0
+
+# ── Browser & Tools ────────────────────────────────────────────
+# ← pinned transitive deps that cause backtracking when cognee and
+#   browser-use are resolved together.
+litellm==1.99.0
+opik==2.2.49
+instructor==1.15.1
+browser-use==0.11.13
+playwright==1.62.0
+
+# ── Observability ───────────────────────────────────────────────
+
+# ── Security (Phase 2) ──────────────────────────────────────────
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+# passlib 1.7.x requires bcrypt 4.x; bcrypt 5 rejects its compatibility probe.
+bcrypt>=4.0,<5.0
+python-multipart>=0.0.12
+# Durable attachment extraction for model-readable PDFs, Office documents, and spreadsheets.
+pypdf>=5.0.0
+python-docx>=1.1.2
+python-pptx>=1.0.2
+openpyxl>=3.1.5
+
+# ── Kubernetes & Sandboxing (Phase 2) ───────────────────────────
+# ← pinned to prevent resolver backtracking
+kubernetes==36.0.3
+grpcio>=1.68.0
+grpcio-tools==1.83.1
+e2b-code-interpreter>=2.9.0
+
+# ── Testing ─────────────────────────────────────────────────────
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
+pytest-cov>=6.0.0
+
+# Production persistence and migrations
+email-validator>=2.2.0
+cryptography>=43.0.0

@@ -1,0 +1,67 @@
+# Golden task suite for Onsite48 My Browser (local bridge)
+# Protocol: onsite48-bridge.v3.1
+# Chrome-dependent cases marked NOT RUN without live extension + paired device.
+
+suite: my_browser_golden
+protocol_version: onsite48-bridge.v3.1
+requires_extension: true
+
+tasks:
+  - id: golden-saas-dashboard-extract
+    title: Logged-in SaaS dashboard navigate → observe → extract
+    description: Navigate to a logged-in style dashboard, observe, extract a structured field.
+    expected: "[status=completed, no_capture_leak]"
+    chrome_dependent: true
+    status: NOT_RUN
+
+  - id: golden-multi-page-form
+    title: Multi-page form fill (type, select, submit) with waits
+    description: type, select_option, wait_for_dom_stable, submit across pages.
+    expected: "[status=completed]"
+    chrome_dependent: true
+    status: NOT_RUN
+
+  - id: golden-download-upload
+    title: Download and/or upload path
+    description: Trigger download; optional upload.
+    expected: [download_received]
+    chrome_dependent: true
+    status: NOT_RUN
+
+  - id: golden-login-wall-takeover
+    title: Login wall / MFA / CAPTCHA-like → auto takeover → human resume → continue
+    description: Challenge → takeover → resume → mandatory fresh observe before next act.
+    expected:
+      - events: [browser.takeover, browser.running_local]
+      - resume_triggers_fresh_observe: true
+      - is_paused_for_challenge_consumes_step_budget: false
+    chrome_dependent: true
+    status: NOT_RUN
+
+  - id: golden-spa-wait
+    title: SPA navigation + wait_for_dom_stable / network idle
+    expected: [observation_stable]
+    chrome_dependent: true
+    status: NOT_RUN
+
+  - id: golden-close-group-stop
+    title: Close task tab group mid-run → single terminal stop (no double-apply)
+    expected: "[events=[browser.stopped], terminal_receipt, no_double_apply]"
+    chrome_dependent: true
+    status: NOT_RUN
+
+reliability:
+  - id: rel-sw-restart-mid-command
+    description: Service worker restart mid-command → single side effect; terminal receipt respected
+    status: NOT_RUN
+    reason: Requires live Chrome MV3 service worker control
+  - id: rel-ws-drop-longpoll
+    description: WS drop → long-poll recovery → same command not double-applied
+    status: NOT_RUN
+    reason: Requires live extension transport
+  - id: rel-duplicate-completion
+    description: Duplicate completion / reconnect → single side effect
+    status: unit_testable
+  - id: rel-capture-scoped
+    description: captureTabScoped only for task tabs; failure → capture_unavailable
+    status: unit_testable

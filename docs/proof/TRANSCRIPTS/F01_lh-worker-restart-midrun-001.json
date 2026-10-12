@@ -1,0 +1,25 @@
+{
+  "task_id": "lh-worker-restart-midrun-001",
+  "status": "failed",
+  "sanitized": true,
+  "summary": "FAILED: worker_restart_state_loss",
+  "failure_cause": "worker_restart_state_loss",
+  "root_cause_analysis": "After simulated worker kill, child artifact index was incomplete; lead did not re-queue remaining items. Root cause: SpawnManager resume path did not re-read /workspace/shared/ manifest after re-attach. Fix target: spawn.py resume_from_artifacts.",
+  "steps_excerpt": [
+    {
+      "step": 1,
+      "event": "model",
+      "note": "goal accepted"
+    },
+    {
+      "step": 5,
+      "event": "error",
+      "note": "worker_restart_state_loss"
+    },
+    {
+      "step": -1,
+      "event": "finish",
+      "status": "failed"
+    }
+  ]
+}

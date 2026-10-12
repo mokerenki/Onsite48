@@ -1,0 +1,12 @@
+id: gen-qa-006
+tier: general
+goal: Sum 1..10?
+max_steps: 6
+max_cost_usd: 0.15
+grader:
+  type: exact_answer
+  expect:
+    value: '55'
+    numeric: true
+tags:
+- general

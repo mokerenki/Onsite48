@@ -1,0 +1,18 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { Bell, CheckCheck, Loader2 } from "lucide-react";
+import { authHeaders, useAuth } from "@/components/AuthProvider";
+
+type Notification = { id: string; type: string; title: string; body: string; href?: string | null; read_at?: string | null; created_at: string };
+
+export function NotificationBell() {
+  const { accessToken } = useAuth();
+  const [open, setOpen] = useState(false); const [items, setItems] = useState<Notification[]>([]); const [unread, setUnread] = useState(0); const [busy, setBusy] = useState(false);
+  const load = useCallback(async () => { if (!accessToken) return; const response = await fetch("/api/notifications?limit=30", { headers: authHeaders(accessToken), credentials: "include" }); if (!response.ok) return; const body = await response.json(); setItems(body.notifications || []); setUnread((body.notifications || []).filter((item: Notification) => !item.read_at).length); }, [accessToken]);
+  useEffect(() => { void load(); const timer = window.setInterval(() => void load(), 30000); return () => window.clearInterval(timer); }, [load]);
+  async function markAllRead() { if (!accessToken) return; setBusy(true); await fetch("/api/notifications/read-all", { method: "POST", headers: authHeaders(accessToken), credentials: "include" }); await load(); setBusy(false); }
+  async function markRead(id: string) { if (!accessToken) return; await fetch(`/api/notifications/${id}/read`, { method: "POST", headers: authHeaders(accessToken), credentials: "include" }); await load(); }
+  return <div className="relative"><button onClick={() => setOpen((value) => !value)} className="relative grid h-9 w-9 place-items-center rounded-lg text-text-secondary transition hover:bg-onsite48-surface hover:text-[#1a1a1e]" title="Notifications"><Bell className="h-4 w-4" />{unread > 0 && <span className="absolute right-1 top-1 grid min-w-4 place-items-center rounded-full bg-rose-600 px-1 text-[9px] font-semibold leading-4 text-white">{unread > 9 ? "9+" : unread}</span>}</button>{open && <div className="absolute right-0 z-50 mt-2 w-[360px] overflow-hidden rounded-xl border border-black/10 bg-white shadow-xl"><div className="flex items-center justify-between border-b border-black/10 px-3 py-3"><div><p className="text-sm font-semibold">Notifications</p><p className="text-xs text-[#777]">{unread ? `${unread} unread` : "You are up to date"}</p></div><button onClick={() => void markAllRead()} disabled={busy || unread === 0} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-40">{busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCheck className="h-3 w-3" />} Read all</button></div><div className="max-h-[420px] overflow-y-auto overscroll-contain">{items.map((item) => <Link key={item.id} href={item.href || "/"} onClick={() => { void markRead(item.id); setOpen(false); }} className={`block border-b border-black/5 px-3 py-3 hover:bg-[#f7f8fa] ${item.read_at ? "opacity-70" : "bg-indigo-50/40"}`}><p className="text-sm font-medium">{item.title}</p><p className="mt-1 text-xs leading-5 text-[#60646c]">{item.body}</p><p className="mt-1 text-[11px] text-[#8a8e96]">{new Date(item.created_at).toLocaleString()}</p></Link>)}{items.length === 0 && <p className="px-4 py-10 text-center text-sm text-[#777]">No notifications yet.</p>}</div></div>}</div>;
+}

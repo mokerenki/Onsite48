@@ -1,0 +1,13 @@
+id: comp-ws-008
+tier: computer
+goal: >
+  Build a minimal static site under site/ with index.html containing <title>Onsite48</title>. Zip it to out/site.zip.
+max_steps: 25
+max_cost_usd: 0.6
+grader:
+  type: exact_answer
+  expect:
+    value: "Onsite48"
+tags:
+- computer
+- workspace

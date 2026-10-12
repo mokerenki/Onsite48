@@ -1,0 +1,13 @@
+id: comp-ws-009
+tier: computer
+goal: >
+  Create an Excel file out/model.xlsx with a Profit formula cell using openpyxl (install if needed).
+max_steps: 25
+max_cost_usd: 0.6
+grader:
+  type: exact_answer
+  expect:
+    value: "Profit"
+tags:
+- computer
+- workspace

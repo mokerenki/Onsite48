@@ -1,0 +1,21 @@
+id: rel-cal-list-001
+tier: reliability
+goal: What events do I have on my calendar?
+fixtures:
+  google:
+    events:
+    - id: e1
+      summary: Team standup
+      start:
+        dateTime: '2026-10-03T09:00:00Z'
+      end:
+        dateTime: '2026-10-03T09:30:00Z'
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: research_answer
+  expect:
+    must_contain:
+    - standup
+tags:
+- calendar

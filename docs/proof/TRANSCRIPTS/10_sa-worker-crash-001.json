@@ -1,0 +1,25 @@
+{
+  "task_id": "sa-worker-crash-001",
+  "status": "succeeded",
+  "sanitized": true,
+  "summary": "Worker crash isolated; lead continued from artifacts.",
+  "steps_excerpt": [
+    {
+      "step": 1,
+      "event": "model",
+      "note": "goal understood; todo.md initialized"
+    },
+    {
+      "step": 2,
+      "event": "tool",
+      "name": "write_file",
+      "note": "workspace bootstrap"
+    },
+    {
+      "step": -1,
+      "event": "finish",
+      "status": "succeeded"
+    }
+  ],
+  "root_cause": null
+}

@@ -1,0 +1,12 @@
+id: gen-qa-009
+tier: general
+goal: Minutes in 3.5 hours?
+max_steps: 6
+max_cost_usd: 0.15
+grader:
+  type: exact_answer
+  expect:
+    value: '210'
+    numeric: true
+tags:
+- general

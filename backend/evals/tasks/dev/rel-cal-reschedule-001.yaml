@@ -1,0 +1,24 @@
+id: rel-cal-reschedule-001
+tier: reliability
+goal: Reschedule the Team standup to start at 2026-10-03T10:00:00Z and end at 2026-10-03T10:30:00Z.
+fixtures:
+  google:
+    events:
+    - id: evt_seed_1
+      summary: Team standup
+      start:
+        dateTime: '2026-10-03T09:00:00Z'
+        timeZone: UTC
+      end:
+        dateTime: '2026-10-03T09:30:00Z'
+        timeZone: UTC
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: calendar_state
+  expect:
+    event:
+      summary: Team standup
+      start_contains: 2026-10-03T10
+tags:
+- calendar

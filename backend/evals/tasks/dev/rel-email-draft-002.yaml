@@ -1,0 +1,15 @@
+id: rel-email-draft-002
+tier: reliability
+goal: Create a Gmail draft to bob@acme.com subject 'Invoice follow-up' body 'Following
+  up on invoice 4421.'
+max_steps: 8
+max_cost_usd: 0.3
+grader:
+  type: gmail_state
+  expect:
+    draft:
+      to: bob@acme.com
+      subject: Invoice follow-up
+      body: invoice 4421
+tags:
+- email

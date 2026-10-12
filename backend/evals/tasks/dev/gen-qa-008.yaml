@@ -1,0 +1,12 @@
+id: gen-qa-008
+tier: general
+goal: 8x5 area?
+max_steps: 6
+max_cost_usd: 0.15
+grader:
+  type: exact_answer
+  expect:
+    value: '40'
+    numeric: true
+tags:
+- general

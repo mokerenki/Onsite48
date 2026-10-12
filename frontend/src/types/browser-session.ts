@@ -1,0 +1,3 @@
+export type BrowserSessionStatus = "authorizing" | "authorized" | "running" | "paused" | "takeover" | "completed" | "failed" | "cancelled" | "expired";
+export interface BrowserSession { id: string; task_id: string | null; status: BrowserSessionStatus; mode: "focused_tab" | "task_tab"; requested_origins: string[]; granted_capabilities: string[]; tab_ids: number[]; primary_tab_id: number | null; current_step_id: string | null; current_url: string | null; current_observation: Record<string, unknown>; lease_expires_at: string | null; }
+export interface BrowserSessionEvent { sequence: number; type: string; payload: Record<string, unknown>; created_at: string; }

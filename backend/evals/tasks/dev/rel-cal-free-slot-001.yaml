@@ -1,0 +1,22 @@
+id: rel-cal-free-slot-001
+tier: reliability
+goal: Find a free 30-minute slot on 2026-10-03 after the standup and create an event
+  called 'Focus time' there.
+fixtures:
+  google:
+    events:
+    - id: evt_seed_1
+      summary: Team standup
+      start:
+        dateTime: '2026-10-03T09:00:00Z'
+      end:
+        dateTime: '2026-10-03T09:30:00Z'
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: calendar_state
+  expect:
+    event:
+      summary: Focus time
+tags:
+- calendar

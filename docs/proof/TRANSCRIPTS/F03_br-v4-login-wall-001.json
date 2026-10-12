@@ -1,0 +1,25 @@
+{
+  "task_id": "br-v4-login-wall-001",
+  "status": "failed",
+  "sanitized": true,
+  "summary": "FAILED: takeover_timeout",
+  "failure_cause": "takeover_timeout",
+  "root_cause_analysis": "Login wall detected but takeover wait exceeded wall budget before human response. Root cause: approval pause not durable across wall-time budget check. Fix target: loop.py budget exemption while approval_pending.",
+  "steps_excerpt": [
+    {
+      "step": 1,
+      "event": "model",
+      "note": "goal accepted"
+    },
+    {
+      "step": 5,
+      "event": "error",
+      "note": "takeover_timeout"
+    },
+    {
+      "step": -1,
+      "event": "finish",
+      "status": "failed"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+id: sa-compare-5vendors-001
+title: Compare 5 vendors side by side
+tier: parallel
+goal: |
+  wide_map over vendors [Acme, Globex, Initech, Umbrella, Stark] with instruction to extract pricing, features, risks. Return a comparison table CSV.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

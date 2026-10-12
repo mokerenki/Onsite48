@@ -1,0 +1,15 @@
+id: rel-email-draft-004
+tier: reliability
+goal: Compose a draft to partner@vendor.com with subject 'Partnership proposal' and
+  body mentioning 15% discount.
+max_steps: 8
+max_cost_usd: 0.3
+grader:
+  type: gmail_state
+  expect:
+    draft:
+      to: partner@vendor.com
+      subject: Partnership proposal
+      body: 15%
+tags:
+- email

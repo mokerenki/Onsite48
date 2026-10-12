@@ -1,0 +1,11 @@
+id: sa-critic-review-001
+title: Critic reviews a deliverable
+tier: parallel
+goal: |
+  Writer produces a short report; critic returns concrete defects against the goal.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

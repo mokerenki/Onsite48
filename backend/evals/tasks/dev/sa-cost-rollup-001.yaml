@@ -1,0 +1,11 @@
+id: sa-cost-rollup-001
+title: Child costs roll up to parent within 1%
+tier: parallel
+goal: |
+  Three priced workers; parent total_child_cost equals sum within 1%.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

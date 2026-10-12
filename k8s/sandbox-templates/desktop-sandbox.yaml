@@ -1,0 +1,7 @@
+# desktop-sandbox.yaml — Phase 2 (SCAFFOLD)
+#
+# Kubernetes sandbox template for desktop GUI automation.
+# TODO: Define Pod spec with XFCE + VNC + PyAutoGUI container,
+#       VNC service exposure, resource limits.
+
+# SCAFFOLD — Phase 2 implementation pending

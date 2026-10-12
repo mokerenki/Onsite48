@@ -1,0 +1,58 @@
+# Heartbeat Configuration — Phase 1
+# Defines probes, schedules, and policy rules
+
+scheduler:
+  interval_seconds: 300  # 5 minutes
+  active_hours:
+    start: "06:00"
+    end: "22:00"
+  timezone: "Africa/Johannesburg"
+
+probes:
+  court_roll_rss:
+    type: http
+    url: "https://example-court.gov.za/roll/rss"
+    expected_status: 200
+    timeout: 10
+
+  shared_drive_scan:
+    type: file
+    path: "/mnt/shared/court_filings"
+    check: new_files  # trigger on any new file
+
+  document_queue_depth:
+    type: queue
+    queue_name: "document_ingest"
+    threshold: 50  # escalate if > 50 pending
+
+  case_database_health:
+    type: http
+    url: "http://case-db.internal/health"
+    expected_status: 200
+
+policy_rules:
+  - name: critical_http_service_down
+    condition:
+      and:
+        - "==":
+            - http_service_probe.status
+            - "critical"
+        - "==":
+            - http_service_probe.actual_status
+            - 500
+    action: notify_on_call_devops
+    priority: critical
+  - name: high_document_queue_warning
+    condition:
+      ">":
+        - document_ingest_queue.depth
+        - 80
+    action: scale_ingest_workers
+    priority: warn
+  - name: file_not_modified_alert
+    condition:
+      ">":
+        - critical_file_monitor.age_seconds
+        - 3600 # 1 hour
+    action: investigate_file_stale
+    priority: critical

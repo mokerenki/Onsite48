@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://onsite48.dev/protocol/browser_v4.schema.json",
+  "title": "Onsite48 Browser Protocol v4",
+  "description": "Shared observation and action protocol for sandbox Playwright and Chrome extension bridge.",
+  "type": "object",
+  "definitions": {
+    "BBox": {
+      "type": "object",
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": {"type": "number"},
+        "y": {"type": "number"},
+        "w": {"type": "number"},
+        "h": {"type": "number"}
+      }
+    },
+    "Element": {
+      "type": "object",
+      "required": ["ref", "role", "name", "state", "bbox", "frame_id", "fingerprint"],
+      "properties": {
+        "ref": {"type": "string", "description": "Stable within a single observation"},
+        "role": {"type": "string"},
+        "name": {"type": "string"},
+        "state": {
+          "type": "object",
+          "properties": {
+            "disabled": {"type": "boolean"},
+            "checked": {"type": "boolean"},
+            "expanded": {"type": "boolean"},
+            "selected": {"type": "boolean"},
+            "focused": {"type": "boolean"},
+            "value": {"type": "string"},
+            "readonly": {"type": "boolean"},
+            "required": {"type": "boolean"},
+            "password": {"type": "boolean"},
+            "file_input": {"type": "boolean"}
+          },
+          "additionalProperties": true
+        },
+        "bbox": {"$ref": "#/definitions/BBox"},
+        "frame_id": {"type": "string"},
+        "fingerprint": {"type": "string", "description": "Hash of role+name+tag+path for stale detection"},
+        "tag": {"type": "string"},
+        "type": {"type": "string"}
+      }
+    },
+    "Frame": {
+      "type": "object",
+      "required": ["frame_id", "url", "name"],
+      "properties": {
+        "frame_id": {"type": "string"},
+        "url": {"type": "string"},
+        "name": {"type": "string"},
+        "parent_frame_id": {"type": ["string", "null"]}
+      }
+    },
+    "Observation": {
+      "type": "object",
+      "required": ["observation_id", "revision", "url", "title", "frames", "elements"],
+      "properties": {
+        "observation_id": {"type": "string"},
+        "revision": {"type": "integer", "minimum": 0},
+        "url": {"type": "string"},
+        "title": {"type": "string"},
+        "frames": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/Frame"}
+        },
+        "elements": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/Element"}
+        },
+        "screenshot_ref": {"type": ["string", "null"]},
+        "set_of_marks": {"type": "boolean", "default": false},
+        "dialog": {
+          "type": ["object", "null"],
+          "properties": {
+            "type": {"type": "string"},
+            "message": {"type": "string"}
+          }
+        },
+        "scroll": {
+          "type": "object",
+          "properties": {
+            "x": {"type": "number"},
+            "y": {"type": "number"},
+            "max_x": {"type": "number"},
+            "max_y": {"type": "number"}
+          }
+        }
+      }
+    },
+    "ActionTarget": {
+      "type": "object",
+      "properties": {
+        "observation_id": {"type": "string"},
+        "element_ref": {"type": "string"},
+        "coordinates": {
+          "type": "object",
+          "properties": {
+            "x": {"type": "number"},
+            "y": {"type": "number"},
+            "normalized": {"type": "boolean", "default": false}
+          }
+        }
+      }
+    },
+    "ActionRequest": {
+      "type": "object",
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "click", "type", "press_key", "hotkey", "scroll", "wait_for",
+            "select", "drag", "upload", "navigate", "open_tab", "close_tab", "observe"
+          ]
+        },
+        "target": {"$ref": "#/definitions/ActionTarget"},
+        "text": {"type": "string"},
+        "key": {"type": "string"},
+        "keys": {"type": "array", "items": {"type": "string"}},
+        "direction": {"type": "string", "enum": ["up", "down", "left", "right"]},
+        "amount": {"type": "number"},
+        "url": {"type": "string"},
+        "file_path": {"type": "string"},
+        "option": {"type": "string"},
+        "timeout_ms": {"type": "integer"},
+        "selector_hint": {"type": "string"},
+        "clear": {"type": "boolean"}
+      }
+    },
+    "ActionReceipt": {
+      "type": "object",
+      "required": ["ok", "action"],
+      "properties": {
+        "ok": {"type": "boolean"},
+        "action": {"type": "string"},
+        "stale_observation": {"type": "boolean", "default": false},
+        "error": {"type": ["string", "null"]},
+        "policy": {
+          "type": "object",
+          "properties": {
+            "decision": {"type": "string", "enum": ["ALLOW", "APPROVAL", "TAKEOVER", "DENY"]},
+            "reason": {"type": "string"}
+          }
+        },
+        "observation": {"$ref": "#/definitions/Observation"},
+        "diff": {
+          "type": "object",
+          "properties": {
+            "url_changed": {"type": "boolean"},
+            "title_changed": {"type": "boolean"},
+            "screenshot_changed": {"type": "boolean"},
+            "elements_added": {"type": "integer"},
+            "elements_removed": {"type": "integer"}
+          }
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {"$ref": "#/definitions/Observation"},
+    {"$ref": "#/definitions/ActionRequest"},
+    {"$ref": "#/definitions/ActionReceipt"}
+  ]
+}

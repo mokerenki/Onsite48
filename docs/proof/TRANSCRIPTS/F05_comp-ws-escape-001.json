@@ -1,0 +1,25 @@
+{
+  "task_id": "comp-ws-escape-001",
+  "status": "failed",
+  "sanitized": true,
+  "summary": "FAILED: path_rejected_but_confused",
+  "failure_cause": "path_rejected_but_confused",
+  "root_cause_analysis": "Agent attempted write outside workspace, received structured error, then looped the same call 3 times before recovery classifier fired. Root cause: LOOP_SAME_CALL_LIMIT interaction with recovery message not sticky enough. Fix target: recovery.sticky_hint.",
+  "steps_excerpt": [
+    {
+      "step": 1,
+      "event": "model",
+      "note": "goal accepted"
+    },
+    {
+      "step": 5,
+      "event": "error",
+      "note": "path_rejected_but_confused"
+    },
+    {
+      "step": -1,
+      "event": "finish",
+      "status": "failed"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-egress-restriction
+  namespace: aether-sandboxes
+spec:
+  podSelector:
+    matchLabels:
+      app: aether-sandbox
+  policyTypes:
+  - Egress
+  egress:
+  # DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: UDP
+      port: 53
+  # HTTPS to public internet (package indexes, APIs) — tighten in prod
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+  # Explicitly no access to cluster metadata / other namespaces by default deny

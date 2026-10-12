@@ -1,0 +1,13 @@
+id: comp-ws-012
+tier: computer
+goal: >
+  Package-install demo: pip install tabulate==0.9.0 inside the workspace and use it to format a table saved to out/table.txt.
+max_steps: 25
+max_cost_usd: 0.6
+grader:
+  type: exact_answer
+  expect:
+    value: "tabulate"
+tags:
+- computer
+- workspace

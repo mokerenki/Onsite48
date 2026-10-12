@@ -1,0 +1,11 @@
+id: sa-widemap-csv-30-001
+title: Process 30 CSV rows via wide_map against local mini-web
+tier: parallel
+goal: |
+  Load items from a 30-row fixture CSV; wide_map role=researcher concurrency=5; produce JSONL table; report failed rows.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

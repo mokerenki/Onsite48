@@ -1,0 +1,14 @@
+id: br-misc-010
+tier: browser
+goal: Describe browser test pages variant 10.
+fixtures:
+  browser_reset: true
+max_steps: 10
+max_cost_usd: 0.3
+grader:
+  type: research_answer
+  expect:
+    must_contain:
+    - form
+tags:
+- browser

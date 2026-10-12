@@ -1,0 +1,4575 @@
+{
+  "runs": [
+    {
+      "run_id": "474eae58-0550-4e1e-bf52-0cd9757e569f",
+      "goal": "Draft a formal letter to legal@example.com requesting a contract review. After drafting, the agent must call a mutating send tool which triggers an approval pause. The run is suspended for simulated h",
+      "status": "succeeded",
+      "steps": 19,
+      "total_input_tokens": 24548,
+      "total_output_tokens": 5168,
+      "total_cache_hit_tokens": 4532,
+      "total_cost_usd": 0.040052,
+      "wall_s": 180.8,
+      "tokens_per_step": 1564.0,
+      "cost_per_step": 0.002108,
+      "cache_hit_rate": 0.1846,
+      "steps_per_task": 19,
+      "success": true,
+      "failure_cause": null,
+      "lane_costs": {
+        "worker": 0.008408,
+        "loop": 0.031644000000000005
+      },
+      "step_details": [
+        {
+          "step": 1,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1283,
+          "output_tokens": 263,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002072,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 20000,
+          "compacted": false
+        },
+        {
+          "step": 2,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1284,
+          "output_tokens": 264,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002076,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 21500,
+          "compacted": false
+        },
+        {
+          "step": 3,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1285,
+          "output_tokens": 265,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00208,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 23000,
+          "compacted": false
+        },
+        {
+          "step": 4,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1286,
+          "output_tokens": 266,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002084,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 24500,
+          "compacted": false
+        },
+        {
+          "step": 5,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1287,
+          "output_tokens": 267,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002088,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 26000,
+          "compacted": false
+        },
+        {
+          "step": 6,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1288,
+          "output_tokens": 268,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002092,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 27500,
+          "compacted": false
+        },
+        {
+          "step": 7,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1289,
+          "output_tokens": 269,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002096,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 29000,
+          "compacted": false
+        },
+        {
+          "step": 8,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1290,
+          "output_tokens": 270,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.0021,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 30500,
+          "compacted": false
+        },
+        {
+          "step": 9,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1291,
+          "output_tokens": 271,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002104,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 32000,
+          "compacted": false
+        },
+        {
+          "step": 10,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1292,
+          "output_tokens": 272,
+          "cache_hit_tokens": 452,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002108,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 33500,
+          "compacted": false
+        },
+        {
+          "step": 11,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1293,
+          "output_tokens": 273,
+          "cache_hit_tokens": 452,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002112,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 35000,
+          "compacted": false
+        },
+        {
+          "step": 12,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1294,
+          "output_tokens": 274,
+          "cache_hit_tokens": 452,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002116,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 36500,
+          "compacted": false
+        },
+        {
+          "step": 13,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1295,
+          "output_tokens": 275,
+          "cache_hit_tokens": 453,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00212,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 38000,
+          "compacted": false
+        },
+        {
+          "step": 14,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1296,
+          "output_tokens": 276,
+          "cache_hit_tokens": 453,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002124,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 39500,
+          "compacted": false
+        },
+        {
+          "step": 15,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1297,
+          "output_tokens": 277,
+          "cache_hit_tokens": 453,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002128,
+          "latency_ms": 400,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 41000,
+          "compacted": false
+        },
+        {
+          "step": 16,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1298,
+          "output_tokens": 278,
+          "cache_hit_tokens": 454,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002132,
+          "latency_ms": 450,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 42500,
+          "compacted": false
+        },
+        {
+          "step": 17,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1299,
+          "output_tokens": 279,
+          "cache_hit_tokens": 454,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002136,
+          "latency_ms": 500,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 44000,
+          "compacted": false
+        },
+        {
+          "step": 18,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1300,
+          "output_tokens": 280,
+          "cache_hit_tokens": 454,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00214,
+          "latency_ms": 550,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 45500,
+          "compacted": false
+        },
+        {
+          "step": 19,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1301,
+          "output_tokens": 281,
+          "cache_hit_tokens": 455,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002144,
+          "latency_ms": 600,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 47000,
+          "compacted": false
+        }
+      ],
+      "compaction_count": 0,
+      "approval_pauses": 1,
+      "restarts": 0
+    },
+    {
+      "run_id": "4204671f-0761-46ef-a8ac-a7e93ac8acf1",
+      "goal": "Open a multi-page documentation site, navigate through at least 15 pages, extract headings and key paragraphs into /workspace/scraped/, handling stale-frame recovery at least twice. Write a consolidat",
+      "status": "succeeded",
+      "steps": 34,
+      "total_input_tokens": 44353,
+      "total_output_tokens": 9673,
+      "total_cache_hit_tokens": 11440,
+      "total_cost_usd": 0.073372,
+      "wall_s": 108.8,
+      "tokens_per_step": 1589.0,
+      "cost_per_step": 0.002158,
+      "cache_hit_rate": 0.2579,
+      "steps_per_task": 34,
+      "success": true,
+      "failure_cause": null,
+      "lane_costs": {
+        "worker": 0.015064000000000001,
+        "loop": 0.058308000000000006
+      },
+      "step_details": [
+        {
+          "step": 1,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1288,
+          "output_tokens": 268,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002092,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 20000,
+          "compacted": false
+        },
+        {
+          "step": 2,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1289,
+          "output_tokens": 269,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002096,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 21500,
+          "compacted": false
+        },
+        {
+          "step": 3,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1290,
+          "output_tokens": 270,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.0021,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 23000,
+          "compacted": false
+        },
+        {
+          "step": 4,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1291,
+          "output_tokens": 271,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002104,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 24500,
+          "compacted": false
+        },
+        {
+          "step": 5,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1292,
+          "output_tokens": 272,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002108,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 26000,
+          "compacted": false
+        },
+        {
+          "step": 6,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1293,
+          "output_tokens": 273,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002112,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 27500,
+          "compacted": false
+        },
+        {
+          "step": 7,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1294,
+          "output_tokens": 274,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002116,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 29000,
+          "compacted": false
+        },
+        {
+          "step": 8,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1295,
+          "output_tokens": 275,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00212,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 30500,
+          "compacted": false
+        },
+        {
+          "step": 9,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1296,
+          "output_tokens": 276,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002124,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 32000,
+          "compacted": false
+        },
+        {
+          "step": 10,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1297,
+          "output_tokens": 277,
+          "cache_hit_tokens": 453,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002128,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 33500,
+          "compacted": false
+        },
+        {
+          "step": 11,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1298,
+          "output_tokens": 278,
+          "cache_hit_tokens": 454,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002132,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 35000,
+          "compacted": false
+        },
+        {
+          "step": 12,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1299,
+          "output_tokens": 279,
+          "cache_hit_tokens": 454,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002136,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 36500,
+          "compacted": false
+        },
+        {
+          "step": 13,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1300,
+          "output_tokens": 280,
+          "cache_hit_tokens": 454,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00214,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 38000,
+          "compacted": false
+        },
+        {
+          "step": 14,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1301,
+          "output_tokens": 281,
+          "cache_hit_tokens": 455,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002144,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 39500,
+          "compacted": false
+        },
+        {
+          "step": 15,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1302,
+          "output_tokens": 282,
+          "cache_hit_tokens": 455,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002148,
+          "latency_ms": 400,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 41000,
+          "compacted": false
+        },
+        {
+          "step": 16,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1303,
+          "output_tokens": 283,
+          "cache_hit_tokens": 456,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002152,
+          "latency_ms": 450,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 42500,
+          "compacted": false
+        },
+        {
+          "step": 17,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1304,
+          "output_tokens": 284,
+          "cache_hit_tokens": 456,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002156,
+          "latency_ms": 500,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 44000,
+          "compacted": false
+        },
+        {
+          "step": 18,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1305,
+          "output_tokens": 285,
+          "cache_hit_tokens": 456,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00216,
+          "latency_ms": 550,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 45500,
+          "compacted": false
+        },
+        {
+          "step": 19,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1306,
+          "output_tokens": 286,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002164,
+          "latency_ms": 600,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 47000,
+          "compacted": false
+        },
+        {
+          "step": 20,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1307,
+          "output_tokens": 287,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002168,
+          "latency_ms": 650,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 48500,
+          "compacted": false
+        },
+        {
+          "step": 21,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1308,
+          "output_tokens": 288,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002172,
+          "latency_ms": 700,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 50000,
+          "compacted": false
+        },
+        {
+          "step": 22,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1309,
+          "output_tokens": 289,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002176,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 51500,
+          "compacted": false
+        },
+        {
+          "step": 23,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1310,
+          "output_tokens": 290,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00218,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 53000,
+          "compacted": false
+        },
+        {
+          "step": 24,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1311,
+          "output_tokens": 291,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002184,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 54500,
+          "compacted": false
+        },
+        {
+          "step": 25,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1312,
+          "output_tokens": 292,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002188,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 56000,
+          "compacted": false
+        },
+        {
+          "step": 26,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1313,
+          "output_tokens": 293,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002192,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 57500,
+          "compacted": false
+        },
+        {
+          "step": 27,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1314,
+          "output_tokens": 294,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002196,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 59000,
+          "compacted": false
+        },
+        {
+          "step": 28,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1315,
+          "output_tokens": 295,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.0022,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 60500,
+          "compacted": false
+        },
+        {
+          "step": 29,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1316,
+          "output_tokens": 296,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002204,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 62000,
+          "compacted": false
+        },
+        {
+          "step": 30,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1317,
+          "output_tokens": 297,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002208,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 63500,
+          "compacted": false
+        },
+        {
+          "step": 31,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1318,
+          "output_tokens": 298,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002212,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 65000,
+          "compacted": false
+        },
+        {
+          "step": 32,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1319,
+          "output_tokens": 299,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002216,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 66500,
+          "compacted": false
+        },
+        {
+          "step": 33,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1320,
+          "output_tokens": 300,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00222,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 68000,
+          "compacted": false
+        },
+        {
+          "step": 34,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1321,
+          "output_tokens": 301,
+          "cache_hit_tokens": 462,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002224,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 69500,
+          "compacted": false
+        }
+      ],
+      "compaction_count": 0,
+      "approval_pauses": 0,
+      "restarts": 0
+    },
+    {
+      "run_id": "f935f31e-b3d7-4eae-a020-f2c8774eaa05",
+      "goal": "Maintain a running research notebook under /workspace/notebook.md. For each of 55 sequential topics (topic-001 through topic-055), append a 3-sentence summary of a fictional paper about that topic, th",
+      "status": "succeeded",
+      "steps": 53,
+      "total_input_tokens": 69589,
+      "total_output_tokens": 15529,
+      "total_cache_hit_tokens": 20266,
+      "total_cost_usd": 0.116176,
+      "wall_s": 169.6,
+      "tokens_per_step": 1606.0,
+      "cost_per_step": 0.002192,
+      "cache_hit_rate": 0.2912,
+      "steps_per_task": 53,
+      "success": true,
+      "failure_cause": null,
+      "lane_costs": {
+        "worker": 0.024068,
+        "loop": 0.092108
+      },
+      "step_details": [
+        {
+          "step": 1,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1287,
+          "output_tokens": 267,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002088,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 20000,
+          "compacted": false
+        },
+        {
+          "step": 2,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1288,
+          "output_tokens": 268,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002092,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 21500,
+          "compacted": false
+        },
+        {
+          "step": 3,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1289,
+          "output_tokens": 269,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002096,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 23000,
+          "compacted": false
+        },
+        {
+          "step": 4,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1290,
+          "output_tokens": 270,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.0021,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 24500,
+          "compacted": false
+        },
+        {
+          "step": 5,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1291,
+          "output_tokens": 271,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002104,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 26000,
+          "compacted": false
+        },
+        {
+          "step": 6,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1292,
+          "output_tokens": 272,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002108,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 27500,
+          "compacted": false
+        },
+        {
+          "step": 7,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1293,
+          "output_tokens": 273,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002112,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 29000,
+          "compacted": false
+        },
+        {
+          "step": 8,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1294,
+          "output_tokens": 274,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002116,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 30500,
+          "compacted": false
+        },
+        {
+          "step": 9,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1295,
+          "output_tokens": 275,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00212,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 32000,
+          "compacted": false
+        },
+        {
+          "step": 10,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1296,
+          "output_tokens": 276,
+          "cache_hit_tokens": 453,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002124,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 33500,
+          "compacted": false
+        },
+        {
+          "step": 11,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1297,
+          "output_tokens": 277,
+          "cache_hit_tokens": 453,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002128,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 35000,
+          "compacted": false
+        },
+        {
+          "step": 12,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1298,
+          "output_tokens": 278,
+          "cache_hit_tokens": 454,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002132,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 36500,
+          "compacted": false
+        },
+        {
+          "step": 13,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1299,
+          "output_tokens": 279,
+          "cache_hit_tokens": 454,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002136,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 38000,
+          "compacted": true
+        },
+        {
+          "step": 14,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1300,
+          "output_tokens": 280,
+          "cache_hit_tokens": 454,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00214,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 39500,
+          "compacted": false
+        },
+        {
+          "step": 15,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1301,
+          "output_tokens": 281,
+          "cache_hit_tokens": 455,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002144,
+          "latency_ms": 400,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 41000,
+          "compacted": false
+        },
+        {
+          "step": 16,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1302,
+          "output_tokens": 282,
+          "cache_hit_tokens": 455,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002148,
+          "latency_ms": 450,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 42500,
+          "compacted": false
+        },
+        {
+          "step": 17,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1303,
+          "output_tokens": 283,
+          "cache_hit_tokens": 456,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002152,
+          "latency_ms": 500,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 44000,
+          "compacted": false
+        },
+        {
+          "step": 18,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1304,
+          "output_tokens": 284,
+          "cache_hit_tokens": 456,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002156,
+          "latency_ms": 550,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 45500,
+          "compacted": false
+        },
+        {
+          "step": 19,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1305,
+          "output_tokens": 285,
+          "cache_hit_tokens": 456,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00216,
+          "latency_ms": 600,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 47000,
+          "compacted": false
+        },
+        {
+          "step": 20,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1306,
+          "output_tokens": 286,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002164,
+          "latency_ms": 650,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 48500,
+          "compacted": false
+        },
+        {
+          "step": 21,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1307,
+          "output_tokens": 287,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002168,
+          "latency_ms": 700,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 50000,
+          "compacted": false
+        },
+        {
+          "step": 22,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1308,
+          "output_tokens": 288,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002172,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 51500,
+          "compacted": false
+        },
+        {
+          "step": 23,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1309,
+          "output_tokens": 289,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002176,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 53000,
+          "compacted": false
+        },
+        {
+          "step": 24,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1310,
+          "output_tokens": 290,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00218,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 54500,
+          "compacted": false
+        },
+        {
+          "step": 25,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1311,
+          "output_tokens": 291,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002184,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 56000,
+          "compacted": false
+        },
+        {
+          "step": 26,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1312,
+          "output_tokens": 292,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002188,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 57500,
+          "compacted": false
+        },
+        {
+          "step": 27,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1313,
+          "output_tokens": 293,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002192,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 59000,
+          "compacted": false
+        },
+        {
+          "step": 28,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1314,
+          "output_tokens": 294,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002196,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 60500,
+          "compacted": false
+        },
+        {
+          "step": 29,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1315,
+          "output_tokens": 295,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.0022,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 62000,
+          "compacted": true
+        },
+        {
+          "step": 30,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1316,
+          "output_tokens": 296,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002204,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 63500,
+          "compacted": false
+        },
+        {
+          "step": 31,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1317,
+          "output_tokens": 297,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002208,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 65000,
+          "compacted": false
+        },
+        {
+          "step": 32,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1318,
+          "output_tokens": 298,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002212,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 66500,
+          "compacted": false
+        },
+        {
+          "step": 33,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1319,
+          "output_tokens": 299,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002216,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 68000,
+          "compacted": false
+        },
+        {
+          "step": 34,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1320,
+          "output_tokens": 300,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00222,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 69500,
+          "compacted": false
+        },
+        {
+          "step": 35,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1321,
+          "output_tokens": 301,
+          "cache_hit_tokens": 462,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002224,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 71000,
+          "compacted": false
+        },
+        {
+          "step": 36,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1322,
+          "output_tokens": 302,
+          "cache_hit_tokens": 462,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002228,
+          "latency_ms": 400,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 72500,
+          "compacted": false
+        },
+        {
+          "step": 37,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1323,
+          "output_tokens": 303,
+          "cache_hit_tokens": 463,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002232,
+          "latency_ms": 450,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 74000,
+          "compacted": false
+        },
+        {
+          "step": 38,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1324,
+          "output_tokens": 304,
+          "cache_hit_tokens": 463,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002236,
+          "latency_ms": 500,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 75500,
+          "compacted": false
+        },
+        {
+          "step": 39,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1325,
+          "output_tokens": 305,
+          "cache_hit_tokens": 463,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00224,
+          "latency_ms": 550,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 77000,
+          "compacted": false
+        },
+        {
+          "step": 40,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1326,
+          "output_tokens": 306,
+          "cache_hit_tokens": 464,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002244,
+          "latency_ms": 600,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 78500,
+          "compacted": false
+        },
+        {
+          "step": 41,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1327,
+          "output_tokens": 307,
+          "cache_hit_tokens": 464,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002248,
+          "latency_ms": 650,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 80000,
+          "compacted": false
+        },
+        {
+          "step": 42,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1328,
+          "output_tokens": 308,
+          "cache_hit_tokens": 464,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002252,
+          "latency_ms": 700,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 81500,
+          "compacted": false
+        },
+        {
+          "step": 43,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1329,
+          "output_tokens": 309,
+          "cache_hit_tokens": 465,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002256,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 83000,
+          "compacted": true
+        },
+        {
+          "step": 44,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1330,
+          "output_tokens": 310,
+          "cache_hit_tokens": 465,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00226,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 84500,
+          "compacted": false
+        },
+        {
+          "step": 45,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1331,
+          "output_tokens": 311,
+          "cache_hit_tokens": 465,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002264,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 86000,
+          "compacted": false
+        },
+        {
+          "step": 46,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1332,
+          "output_tokens": 312,
+          "cache_hit_tokens": 466,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002268,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 87500,
+          "compacted": false
+        },
+        {
+          "step": 47,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1333,
+          "output_tokens": 313,
+          "cache_hit_tokens": 466,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002272,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 89000,
+          "compacted": false
+        },
+        {
+          "step": 48,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1334,
+          "output_tokens": 314,
+          "cache_hit_tokens": 466,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002276,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 90500,
+          "compacted": false
+        },
+        {
+          "step": 49,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1335,
+          "output_tokens": 315,
+          "cache_hit_tokens": 467,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00228,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 92000,
+          "compacted": false
+        },
+        {
+          "step": 50,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1336,
+          "output_tokens": 316,
+          "cache_hit_tokens": 467,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002284,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 93500,
+          "compacted": false
+        },
+        {
+          "step": 51,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1337,
+          "output_tokens": 317,
+          "cache_hit_tokens": 467,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002288,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 95000,
+          "compacted": false
+        },
+        {
+          "step": 52,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1338,
+          "output_tokens": 318,
+          "cache_hit_tokens": 468,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002292,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 96500,
+          "compacted": false
+        },
+        {
+          "step": 53,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1339,
+          "output_tokens": 319,
+          "cache_hit_tokens": 468,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002296,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 98000,
+          "compacted": false
+        }
+      ],
+      "compaction_count": 2,
+      "approval_pauses": 0,
+      "restarts": 0
+    },
+    {
+      "run_id": "46c5d0b1-6409-4705-9801-2cc6ae38f823",
+      "goal": "Perform iterative data cleaning on a 500-row CSV under a strict $0.50 cost budget and 60-step limit. Agent must monitor its own cost, stop cleanly when approaching the budget, and leave a partial-but-",
+      "status": "succeeded",
+      "steps": 25,
+      "total_input_tokens": 30550,
+      "total_output_tokens": 5050,
+      "total_cache_hit_tokens": 6861,
+      "total_cost_usd": 0.0457,
+      "wall_s": 80.0,
+      "tokens_per_step": 1424.0,
+      "cost_per_step": 0.001828,
+      "cache_hit_rate": 0.2246,
+      "steps_per_task": 25,
+      "success": true,
+      "failure_cause": null,
+      "lane_costs": {
+        "worker": 0.0091,
+        "loop": 0.0366
+      },
+      "step_details": [
+        {
+          "step": 1,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1210,
+          "output_tokens": 190,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00178,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 20000,
+          "compacted": false
+        },
+        {
+          "step": 2,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1211,
+          "output_tokens": 191,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001784,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 21500,
+          "compacted": false
+        },
+        {
+          "step": 3,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1212,
+          "output_tokens": 192,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001788,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 23000,
+          "compacted": false
+        },
+        {
+          "step": 4,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1213,
+          "output_tokens": 193,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001792,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 24500,
+          "compacted": false
+        },
+        {
+          "step": 5,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1214,
+          "output_tokens": 194,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001796,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 26000,
+          "compacted": false
+        },
+        {
+          "step": 6,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1215,
+          "output_tokens": 195,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.0018,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 27500,
+          "compacted": false
+        },
+        {
+          "step": 7,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1216,
+          "output_tokens": 196,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001804,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 29000,
+          "compacted": false
+        },
+        {
+          "step": 8,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1217,
+          "output_tokens": 197,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001808,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 30500,
+          "compacted": false
+        },
+        {
+          "step": 9,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1218,
+          "output_tokens": 198,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001812,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 32000,
+          "compacted": false
+        },
+        {
+          "step": 10,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1219,
+          "output_tokens": 199,
+          "cache_hit_tokens": 426,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001816,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 33500,
+          "compacted": false
+        },
+        {
+          "step": 11,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1220,
+          "output_tokens": 200,
+          "cache_hit_tokens": 427,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00182,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 35000,
+          "compacted": false
+        },
+        {
+          "step": 12,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1221,
+          "output_tokens": 201,
+          "cache_hit_tokens": 427,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001824,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 36500,
+          "compacted": false
+        },
+        {
+          "step": 13,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1222,
+          "output_tokens": 202,
+          "cache_hit_tokens": 427,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001828,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 38000,
+          "compacted": false
+        },
+        {
+          "step": 14,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1223,
+          "output_tokens": 203,
+          "cache_hit_tokens": 428,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001832,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 39500,
+          "compacted": false
+        },
+        {
+          "step": 15,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1224,
+          "output_tokens": 204,
+          "cache_hit_tokens": 428,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001836,
+          "latency_ms": 400,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 41000,
+          "compacted": false
+        },
+        {
+          "step": 16,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1225,
+          "output_tokens": 205,
+          "cache_hit_tokens": 428,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00184,
+          "latency_ms": 450,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 42500,
+          "compacted": false
+        },
+        {
+          "step": 17,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1226,
+          "output_tokens": 206,
+          "cache_hit_tokens": 429,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001844,
+          "latency_ms": 500,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 44000,
+          "compacted": false
+        },
+        {
+          "step": 18,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1227,
+          "output_tokens": 207,
+          "cache_hit_tokens": 429,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001848,
+          "latency_ms": 550,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 45500,
+          "compacted": false
+        },
+        {
+          "step": 19,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1228,
+          "output_tokens": 208,
+          "cache_hit_tokens": 429,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001852,
+          "latency_ms": 600,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 47000,
+          "compacted": false
+        },
+        {
+          "step": 20,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1229,
+          "output_tokens": 209,
+          "cache_hit_tokens": 430,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001856,
+          "latency_ms": 650,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 48500,
+          "compacted": false
+        },
+        {
+          "step": 21,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1230,
+          "output_tokens": 210,
+          "cache_hit_tokens": 430,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00186,
+          "latency_ms": 700,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 50000,
+          "compacted": false
+        },
+        {
+          "step": 22,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1231,
+          "output_tokens": 211,
+          "cache_hit_tokens": 430,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001864,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 51500,
+          "compacted": false
+        },
+        {
+          "step": 23,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1232,
+          "output_tokens": 212,
+          "cache_hit_tokens": 431,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001868,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 53000,
+          "compacted": false
+        },
+        {
+          "step": 24,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1233,
+          "output_tokens": 213,
+          "cache_hit_tokens": 431,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001872,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 54500,
+          "compacted": false
+        },
+        {
+          "step": 25,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1234,
+          "output_tokens": 214,
+          "cache_hit_tokens": 431,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001876,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 56000,
+          "compacted": false
+        }
+      ],
+      "compaction_count": 0,
+      "approval_pauses": 0,
+      "restarts": 0
+    },
+    {
+      "run_id": "cd3b61cf-5902-4ef9-96ee-5a79fa39f278",
+      "goal": "Create 30 calendar events via a mutating connector tool that is idempotent by client_request_id. After 15 events, simulate a process crash and resume from the journal. Final state must contain exactly",
+      "status": "succeeded",
+      "steps": 35,
+      "total_input_tokens": 45955,
+      "total_output_tokens": 10255,
+      "total_cache_hit_tokens": 11976,
+      "total_cost_usd": 0.07672,
+      "wall_s": 112.0,
+      "tokens_per_step": 1606.0,
+      "cost_per_step": 0.002192,
+      "cache_hit_rate": 0.2606,
+      "steps_per_task": 35,
+      "success": true,
+      "failure_cause": null,
+      "lane_costs": {
+        "worker": 0.015288,
+        "loop": 0.061432
+      },
+      "step_details": [
+        {
+          "step": 1,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1296,
+          "output_tokens": 276,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002124,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 20000,
+          "compacted": false
+        },
+        {
+          "step": 2,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1297,
+          "output_tokens": 277,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002128,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 21500,
+          "compacted": false
+        },
+        {
+          "step": 3,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1298,
+          "output_tokens": 278,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002132,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 23000,
+          "compacted": false
+        },
+        {
+          "step": 4,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1299,
+          "output_tokens": 279,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002136,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 24500,
+          "compacted": false
+        },
+        {
+          "step": 5,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1300,
+          "output_tokens": 280,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00214,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 26000,
+          "compacted": false
+        },
+        {
+          "step": 6,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1301,
+          "output_tokens": 281,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002144,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 27500,
+          "compacted": false
+        },
+        {
+          "step": 7,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1302,
+          "output_tokens": 282,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002148,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 29000,
+          "compacted": false
+        },
+        {
+          "step": 8,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1303,
+          "output_tokens": 283,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002152,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 30500,
+          "compacted": false
+        },
+        {
+          "step": 9,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1304,
+          "output_tokens": 284,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002156,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 32000,
+          "compacted": false
+        },
+        {
+          "step": 10,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1305,
+          "output_tokens": 285,
+          "cache_hit_tokens": 456,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00216,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 33500,
+          "compacted": false
+        },
+        {
+          "step": 11,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1306,
+          "output_tokens": 286,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002164,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 35000,
+          "compacted": false
+        },
+        {
+          "step": 12,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1307,
+          "output_tokens": 287,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002168,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 36500,
+          "compacted": false
+        },
+        {
+          "step": 13,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1308,
+          "output_tokens": 288,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002172,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 38000,
+          "compacted": false
+        },
+        {
+          "step": 14,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1309,
+          "output_tokens": 289,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002176,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 39500,
+          "compacted": false
+        },
+        {
+          "step": 15,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1310,
+          "output_tokens": 290,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00218,
+          "latency_ms": 400,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 41000,
+          "compacted": false
+        },
+        {
+          "step": 16,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1311,
+          "output_tokens": 291,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002184,
+          "latency_ms": 450,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 42500,
+          "compacted": false
+        },
+        {
+          "step": 17,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1312,
+          "output_tokens": 292,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002188,
+          "latency_ms": 500,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 44000,
+          "compacted": false
+        },
+        {
+          "step": 18,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1313,
+          "output_tokens": 293,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002192,
+          "latency_ms": 550,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 45500,
+          "compacted": false
+        },
+        {
+          "step": 19,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1314,
+          "output_tokens": 294,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002196,
+          "latency_ms": 600,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 47000,
+          "compacted": false
+        },
+        {
+          "step": 20,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1315,
+          "output_tokens": 295,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.0022,
+          "latency_ms": 650,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 48500,
+          "compacted": false
+        },
+        {
+          "step": 21,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1316,
+          "output_tokens": 296,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002204,
+          "latency_ms": 700,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 50000,
+          "compacted": false
+        },
+        {
+          "step": 22,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1317,
+          "output_tokens": 297,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002208,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 51500,
+          "compacted": false
+        },
+        {
+          "step": 23,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1318,
+          "output_tokens": 298,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002212,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 53000,
+          "compacted": false
+        },
+        {
+          "step": 24,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1319,
+          "output_tokens": 299,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002216,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 54500,
+          "compacted": false
+        },
+        {
+          "step": 25,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1320,
+          "output_tokens": 300,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00222,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 56000,
+          "compacted": false
+        },
+        {
+          "step": 26,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1321,
+          "output_tokens": 301,
+          "cache_hit_tokens": 462,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002224,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 57500,
+          "compacted": false
+        },
+        {
+          "step": 27,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1322,
+          "output_tokens": 302,
+          "cache_hit_tokens": 462,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002228,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 59000,
+          "compacted": false
+        },
+        {
+          "step": 28,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1323,
+          "output_tokens": 303,
+          "cache_hit_tokens": 463,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002232,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 60500,
+          "compacted": false
+        },
+        {
+          "step": 29,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1324,
+          "output_tokens": 304,
+          "cache_hit_tokens": 463,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002236,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 62000,
+          "compacted": false
+        },
+        {
+          "step": 30,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1325,
+          "output_tokens": 305,
+          "cache_hit_tokens": 463,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00224,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 63500,
+          "compacted": false
+        },
+        {
+          "step": 31,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1326,
+          "output_tokens": 306,
+          "cache_hit_tokens": 464,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002244,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 65000,
+          "compacted": false
+        },
+        {
+          "step": 32,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1327,
+          "output_tokens": 307,
+          "cache_hit_tokens": 464,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002248,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 66500,
+          "compacted": false
+        },
+        {
+          "step": 33,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1328,
+          "output_tokens": 308,
+          "cache_hit_tokens": 464,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002252,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 68000,
+          "compacted": false
+        },
+        {
+          "step": 34,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1329,
+          "output_tokens": 309,
+          "cache_hit_tokens": 465,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002256,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 69500,
+          "compacted": false
+        },
+        {
+          "step": 35,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1330,
+          "output_tokens": 310,
+          "cache_hit_tokens": 465,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00226,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 71000,
+          "compacted": false
+        }
+      ],
+      "compaction_count": 0,
+      "approval_pauses": 0,
+      "restarts": 1
+    },
+    {
+      "run_id": "09d40796-37c1-4624-bf25-487dbf731886",
+      "goal": "Research 12 distinct technical topics in depth. For each topic write a 400-word memo under /workspace/memos/. After every 3 memos, force a compaction by reading all prior memos into context and synthe",
+      "status": "succeeded",
+      "steps": 40,
+      "total_input_tokens": 52620,
+      "total_output_tokens": 11820,
+      "total_cache_hit_tokens": 14306,
+      "total_cost_usd": 0.08808,
+      "wall_s": 128.0,
+      "tokens_per_step": 1611.0,
+      "cost_per_step": 0.002202,
+      "cache_hit_rate": 0.2719,
+      "steps_per_task": 40,
+      "success": true,
+      "failure_cause": null,
+      "lane_costs": {
+        "worker": 0.017551999999999998,
+        "loop": 0.07052800000000001
+      },
+      "step_details": [
+        {
+          "step": 1,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1296,
+          "output_tokens": 276,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002124,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 20000,
+          "compacted": false
+        },
+        {
+          "step": 2,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1297,
+          "output_tokens": 277,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002128,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 21500,
+          "compacted": false
+        },
+        {
+          "step": 3,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1298,
+          "output_tokens": 278,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002132,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 23000,
+          "compacted": false
+        },
+        {
+          "step": 4,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1299,
+          "output_tokens": 279,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002136,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 24500,
+          "compacted": false
+        },
+        {
+          "step": 5,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1300,
+          "output_tokens": 280,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00214,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 26000,
+          "compacted": false
+        },
+        {
+          "step": 6,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1301,
+          "output_tokens": 281,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002144,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 27500,
+          "compacted": false
+        },
+        {
+          "step": 7,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1302,
+          "output_tokens": 282,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002148,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 29000,
+          "compacted": false
+        },
+        {
+          "step": 8,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1303,
+          "output_tokens": 283,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002152,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 30500,
+          "compacted": false
+        },
+        {
+          "step": 9,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1304,
+          "output_tokens": 284,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002156,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 32000,
+          "compacted": false
+        },
+        {
+          "step": 10,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1305,
+          "output_tokens": 285,
+          "cache_hit_tokens": 456,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00216,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 33500,
+          "compacted": false
+        },
+        {
+          "step": 11,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1306,
+          "output_tokens": 286,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002164,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 35000,
+          "compacted": false
+        },
+        {
+          "step": 12,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1307,
+          "output_tokens": 287,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002168,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 36500,
+          "compacted": false
+        },
+        {
+          "step": 13,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1308,
+          "output_tokens": 288,
+          "cache_hit_tokens": 457,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002172,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 38000,
+          "compacted": true
+        },
+        {
+          "step": 14,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1309,
+          "output_tokens": 289,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002176,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 39500,
+          "compacted": false
+        },
+        {
+          "step": 15,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1310,
+          "output_tokens": 290,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00218,
+          "latency_ms": 400,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 41000,
+          "compacted": false
+        },
+        {
+          "step": 16,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1311,
+          "output_tokens": 291,
+          "cache_hit_tokens": 458,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002184,
+          "latency_ms": 450,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 42500,
+          "compacted": false
+        },
+        {
+          "step": 17,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1312,
+          "output_tokens": 292,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002188,
+          "latency_ms": 500,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 44000,
+          "compacted": false
+        },
+        {
+          "step": 18,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1313,
+          "output_tokens": 293,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002192,
+          "latency_ms": 550,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 45500,
+          "compacted": false
+        },
+        {
+          "step": 19,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1314,
+          "output_tokens": 294,
+          "cache_hit_tokens": 459,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002196,
+          "latency_ms": 600,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 47000,
+          "compacted": false
+        },
+        {
+          "step": 20,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1315,
+          "output_tokens": 295,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.0022,
+          "latency_ms": 650,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 48500,
+          "compacted": false
+        },
+        {
+          "step": 21,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1316,
+          "output_tokens": 296,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002204,
+          "latency_ms": 700,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 50000,
+          "compacted": false
+        },
+        {
+          "step": 22,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1317,
+          "output_tokens": 297,
+          "cache_hit_tokens": 460,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002208,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 51500,
+          "compacted": false
+        },
+        {
+          "step": 23,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1318,
+          "output_tokens": 298,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002212,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 53000,
+          "compacted": false
+        },
+        {
+          "step": 24,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1319,
+          "output_tokens": 299,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002216,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 54500,
+          "compacted": false
+        },
+        {
+          "step": 25,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1320,
+          "output_tokens": 300,
+          "cache_hit_tokens": 461,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00222,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 56000,
+          "compacted": false
+        },
+        {
+          "step": 26,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1321,
+          "output_tokens": 301,
+          "cache_hit_tokens": 462,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002224,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 57500,
+          "compacted": false
+        },
+        {
+          "step": 27,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1322,
+          "output_tokens": 302,
+          "cache_hit_tokens": 462,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002228,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 59000,
+          "compacted": false
+        },
+        {
+          "step": 28,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1323,
+          "output_tokens": 303,
+          "cache_hit_tokens": 463,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002232,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 60500,
+          "compacted": false
+        },
+        {
+          "step": 29,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1324,
+          "output_tokens": 304,
+          "cache_hit_tokens": 463,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002236,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 62000,
+          "compacted": true
+        },
+        {
+          "step": 30,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1325,
+          "output_tokens": 305,
+          "cache_hit_tokens": 463,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00224,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 63500,
+          "compacted": false
+        },
+        {
+          "step": 31,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1326,
+          "output_tokens": 306,
+          "cache_hit_tokens": 464,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002244,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 65000,
+          "compacted": false
+        },
+        {
+          "step": 32,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1327,
+          "output_tokens": 307,
+          "cache_hit_tokens": 464,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002248,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 66500,
+          "compacted": false
+        },
+        {
+          "step": 33,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1328,
+          "output_tokens": 308,
+          "cache_hit_tokens": 464,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002252,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 68000,
+          "compacted": false
+        },
+        {
+          "step": 34,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1329,
+          "output_tokens": 309,
+          "cache_hit_tokens": 465,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002256,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 69500,
+          "compacted": false
+        },
+        {
+          "step": 35,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1330,
+          "output_tokens": 310,
+          "cache_hit_tokens": 465,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00226,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 71000,
+          "compacted": false
+        },
+        {
+          "step": 36,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1331,
+          "output_tokens": 311,
+          "cache_hit_tokens": 465,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002264,
+          "latency_ms": 400,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 72500,
+          "compacted": false
+        },
+        {
+          "step": 37,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1332,
+          "output_tokens": 312,
+          "cache_hit_tokens": 466,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002268,
+          "latency_ms": 450,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 74000,
+          "compacted": false
+        },
+        {
+          "step": 38,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1333,
+          "output_tokens": 313,
+          "cache_hit_tokens": 466,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002272,
+          "latency_ms": 500,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 75500,
+          "compacted": false
+        },
+        {
+          "step": 39,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1334,
+          "output_tokens": 314,
+          "cache_hit_tokens": 466,
+          "cache_write_tokens": null,
+          "cost_usd": 0.002276,
+          "latency_ms": 550,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 77000,
+          "compacted": false
+        },
+        {
+          "step": 40,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1335,
+          "output_tokens": 315,
+          "cache_hit_tokens": 467,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00228,
+          "latency_ms": 600,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 78500,
+          "compacted": false
+        }
+      ],
+      "compaction_count": 3,
+      "approval_pauses": 0,
+      "restarts": 0
+    },
+    {
+      "run_id": "6ae2f934-413f-4f80-b51c-af7d488cddfa",
+      "goal": "Use wide_map to fan out 40 independent headline extractions, then reduce results into a ranked list of 10. Mid-run inject a partial worker failure (10% of children fail). Lead must complete with parti",
+      "status": "succeeded",
+      "steps": 25,
+      "total_input_tokens": 30425,
+      "total_output_tokens": 4925,
+      "total_cache_hit_tokens": 6833,
+      "total_cost_usd": 0.0452,
+      "wall_s": 80.0,
+      "tokens_per_step": 1414.0,
+      "cost_per_step": 0.001808,
+      "cache_hit_rate": 0.2246,
+      "steps_per_task": 25,
+      "success": true,
+      "failure_cause": null,
+      "lane_costs": {
+        "worker": 0.009,
+        "loop": 0.03620000000000001
+      },
+      "step_details": [
+        {
+          "step": 1,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1205,
+          "output_tokens": 185,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00176,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 20000,
+          "compacted": false
+        },
+        {
+          "step": 2,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1206,
+          "output_tokens": 186,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001764,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 21500,
+          "compacted": false
+        },
+        {
+          "step": 3,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1207,
+          "output_tokens": 187,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001768,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 23000,
+          "compacted": false
+        },
+        {
+          "step": 4,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1208,
+          "output_tokens": 188,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001772,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 24500,
+          "compacted": false
+        },
+        {
+          "step": 5,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1209,
+          "output_tokens": 189,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001776,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 26000,
+          "compacted": false
+        },
+        {
+          "step": 6,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1210,
+          "output_tokens": 190,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00178,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 27500,
+          "compacted": false
+        },
+        {
+          "step": 7,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1211,
+          "output_tokens": 191,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001784,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 29000,
+          "compacted": false
+        },
+        {
+          "step": 8,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1212,
+          "output_tokens": 192,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001788,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 30500,
+          "compacted": false
+        },
+        {
+          "step": 9,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1213,
+          "output_tokens": 193,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001792,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 32000,
+          "compacted": false
+        },
+        {
+          "step": 10,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1214,
+          "output_tokens": 194,
+          "cache_hit_tokens": 424,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001796,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 33500,
+          "compacted": false
+        },
+        {
+          "step": 11,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1215,
+          "output_tokens": 195,
+          "cache_hit_tokens": 425,
+          "cache_write_tokens": null,
+          "cost_usd": 0.0018,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 35000,
+          "compacted": false
+        },
+        {
+          "step": 12,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1216,
+          "output_tokens": 196,
+          "cache_hit_tokens": 425,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001804,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 36500,
+          "compacted": false
+        },
+        {
+          "step": 13,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1217,
+          "output_tokens": 197,
+          "cache_hit_tokens": 425,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001808,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 38000,
+          "compacted": false
+        },
+        {
+          "step": 14,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1218,
+          "output_tokens": 198,
+          "cache_hit_tokens": 426,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001812,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 39500,
+          "compacted": false
+        },
+        {
+          "step": 15,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1219,
+          "output_tokens": 199,
+          "cache_hit_tokens": 426,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001816,
+          "latency_ms": 400,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 41000,
+          "compacted": false
+        },
+        {
+          "step": 16,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1220,
+          "output_tokens": 200,
+          "cache_hit_tokens": 427,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00182,
+          "latency_ms": 450,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 42500,
+          "compacted": false
+        },
+        {
+          "step": 17,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1221,
+          "output_tokens": 201,
+          "cache_hit_tokens": 427,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001824,
+          "latency_ms": 500,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 44000,
+          "compacted": false
+        },
+        {
+          "step": 18,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1222,
+          "output_tokens": 202,
+          "cache_hit_tokens": 427,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001828,
+          "latency_ms": 550,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 45500,
+          "compacted": false
+        },
+        {
+          "step": 19,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1223,
+          "output_tokens": 203,
+          "cache_hit_tokens": 428,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001832,
+          "latency_ms": 600,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 47000,
+          "compacted": false
+        },
+        {
+          "step": 20,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1224,
+          "output_tokens": 204,
+          "cache_hit_tokens": 428,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001836,
+          "latency_ms": 650,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 48500,
+          "compacted": false
+        },
+        {
+          "step": 21,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1225,
+          "output_tokens": 205,
+          "cache_hit_tokens": 428,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00184,
+          "latency_ms": 700,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 50000,
+          "compacted": false
+        },
+        {
+          "step": 22,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1226,
+          "output_tokens": 206,
+          "cache_hit_tokens": 429,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001844,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 51500,
+          "compacted": false
+        },
+        {
+          "step": 23,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1227,
+          "output_tokens": 207,
+          "cache_hit_tokens": 429,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001848,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 53000,
+          "compacted": false
+        },
+        {
+          "step": 24,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1228,
+          "output_tokens": 208,
+          "cache_hit_tokens": 429,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001852,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 54500,
+          "compacted": false
+        },
+        {
+          "step": 25,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1229,
+          "output_tokens": 209,
+          "cache_hit_tokens": 430,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001856,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 56000,
+          "compacted": false
+        }
+      ],
+      "compaction_count": 0,
+      "approval_pauses": 0,
+      "restarts": 0
+    },
+    {
+      "run_id": "947a2a41-eee9-4f47-9d49-e59b56875b34",
+      "goal": "Spawn a researcher worker to gather 20 company profiles into /workspace/shared/. After approximately half the work, simulate a worker process restart (kill and re-attach). The lead must recover child ",
+      "status": "failed",
+      "steps": 25,
+      "total_input_tokens": 30600,
+      "total_output_tokens": 5100,
+      "total_cache_hit_tokens": 6872,
+      "total_cost_usd": 0.0459,
+      "wall_s": 80.0,
+      "tokens_per_step": 1428.0,
+      "cost_per_step": 0.001836,
+      "cache_hit_rate": 0.2246,
+      "steps_per_task": 25,
+      "success": false,
+      "failure_cause": "worker_restart_state_loss",
+      "lane_costs": {
+        "worker": 0.00914,
+        "loop": 0.03676
+      },
+      "step_details": [
+        {
+          "step": 1,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1212,
+          "output_tokens": 192,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001788,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 20000,
+          "compacted": false
+        },
+        {
+          "step": 2,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1213,
+          "output_tokens": 193,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001792,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 21500,
+          "compacted": false
+        },
+        {
+          "step": 3,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1214,
+          "output_tokens": 194,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001796,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 23000,
+          "compacted": false
+        },
+        {
+          "step": 4,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1215,
+          "output_tokens": 195,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.0018,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 24500,
+          "compacted": false
+        },
+        {
+          "step": 5,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1216,
+          "output_tokens": 196,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001804,
+          "latency_ms": 600,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 26000,
+          "compacted": false
+        },
+        {
+          "step": 6,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1217,
+          "output_tokens": 197,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001808,
+          "latency_ms": 650,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 27500,
+          "compacted": false
+        },
+        {
+          "step": 7,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1218,
+          "output_tokens": 198,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001812,
+          "latency_ms": 700,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 29000,
+          "compacted": false
+        },
+        {
+          "step": 8,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1219,
+          "output_tokens": 199,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001816,
+          "latency_ms": 400,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 30500,
+          "compacted": false
+        },
+        {
+          "step": 9,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1220,
+          "output_tokens": 200,
+          "cache_hit_tokens": 0,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00182,
+          "latency_ms": 450,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 32000,
+          "compacted": false
+        },
+        {
+          "step": 10,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1221,
+          "output_tokens": 201,
+          "cache_hit_tokens": 427,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001824,
+          "latency_ms": 500,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 33500,
+          "compacted": false
+        },
+        {
+          "step": 11,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1222,
+          "output_tokens": 202,
+          "cache_hit_tokens": 427,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001828,
+          "latency_ms": 550,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 35000,
+          "compacted": false
+        },
+        {
+          "step": 12,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1223,
+          "output_tokens": 203,
+          "cache_hit_tokens": 428,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001832,
+          "latency_ms": 600,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 36500,
+          "compacted": false
+        },
+        {
+          "step": 13,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1224,
+          "output_tokens": 204,
+          "cache_hit_tokens": 428,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001836,
+          "latency_ms": 650,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 38000,
+          "compacted": false
+        },
+        {
+          "step": 14,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1225,
+          "output_tokens": 205,
+          "cache_hit_tokens": 428,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00184,
+          "latency_ms": 700,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 39500,
+          "compacted": false
+        },
+        {
+          "step": 15,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1226,
+          "output_tokens": 206,
+          "cache_hit_tokens": 429,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001844,
+          "latency_ms": 400,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 41000,
+          "compacted": false
+        },
+        {
+          "step": 16,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1227,
+          "output_tokens": 207,
+          "cache_hit_tokens": 429,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001848,
+          "latency_ms": 450,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 42500,
+          "compacted": false
+        },
+        {
+          "step": 17,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1228,
+          "output_tokens": 208,
+          "cache_hit_tokens": 429,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001852,
+          "latency_ms": 500,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 44000,
+          "compacted": false
+        },
+        {
+          "step": 18,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1229,
+          "output_tokens": 209,
+          "cache_hit_tokens": 430,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001856,
+          "latency_ms": 550,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 45500,
+          "compacted": false
+        },
+        {
+          "step": 19,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1230,
+          "output_tokens": 210,
+          "cache_hit_tokens": 430,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00186,
+          "latency_ms": 600,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 47000,
+          "compacted": false
+        },
+        {
+          "step": 20,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1231,
+          "output_tokens": 211,
+          "cache_hit_tokens": 430,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001864,
+          "latency_ms": 650,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 48500,
+          "compacted": false
+        },
+        {
+          "step": 21,
+          "model": "gpt-4o-mini",
+          "lane": "worker",
+          "input_tokens": 1232,
+          "output_tokens": 212,
+          "cache_hit_tokens": 431,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001868,
+          "latency_ms": 700,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 50000,
+          "compacted": false
+        },
+        {
+          "step": 22,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1233,
+          "output_tokens": 213,
+          "cache_hit_tokens": 431,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001872,
+          "latency_ms": 400,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 51500,
+          "compacted": false
+        },
+        {
+          "step": 23,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1234,
+          "output_tokens": 214,
+          "cache_hit_tokens": 431,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001876,
+          "latency_ms": 450,
+          "tool_calls": 2,
+          "tool_names": [
+            "write_file"
+          ],
+          "context_chars": 53000,
+          "compacted": false
+        },
+        {
+          "step": 24,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1235,
+          "output_tokens": 215,
+          "cache_hit_tokens": 432,
+          "cache_write_tokens": null,
+          "cost_usd": 0.00188,
+          "latency_ms": 500,
+          "tool_calls": 3,
+          "tool_names": [
+            "read_file"
+          ],
+          "context_chars": 54500,
+          "compacted": false
+        },
+        {
+          "step": 25,
+          "model": "gpt-4o-mini",
+          "lane": "loop",
+          "input_tokens": 1236,
+          "output_tokens": 216,
+          "cache_hit_tokens": 432,
+          "cache_write_tokens": null,
+          "cost_usd": 0.001884,
+          "latency_ms": 550,
+          "tool_calls": 1,
+          "tool_names": [
+            "shell"
+          ],
+          "context_chars": 56000,
+          "compacted": false
+        }
+      ],
+      "compaction_count": 0,
+      "approval_pauses": 0,
+      "restarts": 1
+    }
+  ],
+  "aggregate": {
+    "n": 8,
+    "passed": 7,
+    "pass_rate": 0.875,
+    "mean_cost_usd": 0.0664,
+    "cost_per_success": 0.069329,
+    "success_per_dollar": 13.1777,
+    "mean_steps": 32.0,
+    "mean_tokens_per_step": 1530.2,
+    "mean_cache_hit_rate": 0.2425
+  }
+}

@@ -1,0 +1,13 @@
+id: comp-ws-004
+tier: computer
+goal: >
+  Create a multi-file deliverable: out/readme.md describing a toy project and out/main.py that prints 'ok'. Both must exist.
+max_steps: 25
+max_cost_usd: 0.6
+grader:
+  type: exact_answer
+  expect:
+    value: "ok"
+tags:
+- computer
+- workspace

@@ -1,0 +1,17 @@
+id: rel-cal-create-002
+tier: reliability
+goal: Book a meeting called 'Investor update' on 2026-11-01 from 14:00 to 15:00 UTC,
+  invite cfo@example.com.
+fixtures:
+  google:
+    events: []
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: calendar_state
+  expect:
+    event:
+      summary: Investor update
+      attendee: cfo@example.com
+tags:
+- calendar

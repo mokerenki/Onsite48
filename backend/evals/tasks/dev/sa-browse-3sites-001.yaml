@@ -1,0 +1,11 @@
+id: sa-browse-3sites-001
+title: Browse 3 sites and reconcile facts
+tier: parallel
+goal: |
+  spawn_agents with browser_operator for example.com, example.org, example.net; critic reconciles conflicting claims.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

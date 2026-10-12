@@ -1,0 +1,11 @@
+id: cmp-task-006
+tier: compound
+goal: 'Compound multi-step task 6: research then email then calendar.'
+max_steps: 20
+max_cost_usd: 0.8
+grader:
+  type: gmail_state
+  expect:
+    must_not_send: true
+tags:
+- compound

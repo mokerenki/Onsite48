@@ -1,0 +1,12 @@
+id: res-web-002
+tier: research
+goal: Research task 2 against local mini-web.
+max_steps: 15
+max_cost_usd: 0.5
+grader:
+  type: research_answer
+  expect:
+    must_contain:
+    - x
+tags:
+- research

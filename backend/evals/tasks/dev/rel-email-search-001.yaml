@@ -1,0 +1,38 @@
+id: rel-email-search-001
+tier: reliability
+goal: How many unread emails do I have?
+fixtures:
+  google:
+    messages:
+    - id: u1
+      from: a@x.com
+      subject: A
+      body: x
+      labelIds:
+      - INBOX
+      - UNREAD
+      internalDate: '1'
+    - id: u2
+      from: b@x.com
+      subject: B
+      body: y
+      labelIds:
+      - INBOX
+      - UNREAD
+      internalDate: '2'
+    - id: r1
+      from: c@x.com
+      subject: C
+      body: z
+      labelIds:
+      - INBOX
+      internalDate: '3'
+max_steps: 8
+max_cost_usd: 0.3
+grader:
+  type: exact_answer
+  expect:
+    value: '2'
+    numeric: true
+tags:
+- email

@@ -1,0 +1,25 @@
+{
+  "task_id": "sa-rate-limit-partial-001",
+  "status": "failed",
+  "sanitized": true,
+  "summary": "FAILED: rate_limit_exhausted",
+  "failure_cause": "rate_limit_exhausted",
+  "root_cause_analysis": "Fan-out hit connector rate limit; partial results not written because reduce step assumed all children terminal. Root cause: wide_map reduce did not accept partial=True status. Fix target: spawn.wide_map reduce contract.",
+  "steps_excerpt": [
+    {
+      "step": 1,
+      "event": "model",
+      "note": "goal accepted"
+    },
+    {
+      "step": 5,
+      "event": "error",
+      "note": "rate_limit_exhausted"
+    },
+    {
+      "step": -1,
+      "event": "finish",
+      "status": "failed"
+    }
+  ]
+}

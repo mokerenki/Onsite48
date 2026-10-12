@@ -1,0 +1,11 @@
+id: sa-worker-crash-001
+title: Worker crashes mid-run; lead continues
+tier: parallel
+goal: |
+  Spawn a worker that raises; lead must finish without corrupted state and report the failure.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

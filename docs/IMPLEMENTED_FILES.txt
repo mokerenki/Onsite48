@@ -1,0 +1,32 @@
+ [31mM[m backend/Dockerfile
+ [31mM[m backend/app/api/connectors.py
+ [31mM[m backend/app/api/websocket_handler.py
+ [31mM[m backend/app/core/config.py
+ [31mM[m backend/app/core/security.py
+ [31mM[m backend/app/main.py
+ [31mM[m backend/requirements.txt
+ [31mM[m docker-compose.yml
+ [31mM[m frontend/package-lock.json
+ [31mM[m frontend/src/app/connectors/page.tsx
+ [31mM[m frontend/src/app/history/page.tsx
+ [31mM[m frontend/src/app/layout.tsx
+ [31mM[m frontend/src/app/page.tsx
+ [31mM[m frontend/src/components/Chatinterface.tsx
+ [31mM[m frontend/src/components/Sidebar.tsx
+ [31mM[m nginx/nginx.conf
+[31m??[m backend/alembic.ini
+[31m??[m backend/alembic/
+[31m??[m backend/app/api/auth.py
+[31m??[m backend/app/api/product_tasks.py
+[31m??[m backend/app/api/realtime.py
+[31m??[m backend/app/db.py
+[31m??[m backend/app/models.py
+[31m??[m backend/app/services/connector_vault.py
+[31m??[m backend/app/services/execution_identity.py
+[31m??[m backend/app/tools/connector_tools.py
+[31m??[m backend/entrypoint.sh
+[31m??[m backend/tests/test_product_foundation.py
+[31m??[m docs/
+[31m??[m frontend/src/app/auth/
+[31m??[m frontend/src/components/AuthProvider.tsx
+[31m??[m frontend/src/components/AuthScreen.tsx

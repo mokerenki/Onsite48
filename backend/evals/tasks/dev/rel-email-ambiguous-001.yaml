@@ -1,0 +1,28 @@
+id: rel-email-ambiguous-001
+tier: reliability
+goal: Reply to the message about the invoice.
+fixtures:
+  google:
+    messages:
+    - id: m1
+      from: bob@example.com
+      subject: 'Invoice #4421'
+      body: x
+      labelIds:
+      - INBOX
+      internalDate: '1'
+    - id: m2
+      from: dave@example.com
+      subject: 'Invoice #9988'
+      body: y
+      labelIds:
+      - INBOX
+      internalDate: '2'
+max_steps: 8
+max_cost_usd: 0.3
+grader:
+  type: exact_answer
+  expect:
+    value: which
+tags:
+- email

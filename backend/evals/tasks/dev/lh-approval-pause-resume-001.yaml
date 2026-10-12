@@ -1,0 +1,19 @@
+id: lh-approval-pause-resume-001
+tier: long_horizon
+goal: >
+  Draft a formal letter to legal@example.com requesting a contract review.
+  After drafting, the agent must call a mutating send tool which triggers an
+  approval pause. The run is suspended for simulated hours, then resumed with
+  approval granted. Complete only after the send receipt is recorded and a
+  confirmation note is written to /workspace/sent_log.md.
+expected_min_steps: 8
+expected_approval_pauses: 1
+timeout_s: 1200
+tags: [long_horizon, approval, resume]
+grader:
+  type: filesystem
+  checks:
+    - path: /workspace/sent_log.md
+      exists: true
+    - path: /workspace/draft_letter.md
+      exists: true

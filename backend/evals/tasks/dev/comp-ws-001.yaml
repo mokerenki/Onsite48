@@ -1,0 +1,17 @@
+id: comp-ws-001
+tier: computer
+goal: >
+  Create a CSV file sales.csv with columns product,units,revenue and three data rows.
+  Then compute total revenue with Python and write the number alone to out/total.txt.
+  Deliver out/total.txt.
+max_steps: 20
+max_cost_usd: 0.5
+grader:
+  type: exact_answer
+  expect:
+    value: "placeholder-total"
+    # Runtime adapter should also check workspace file; offline may skip
+tags:
+- computer
+- workspace
+- csv

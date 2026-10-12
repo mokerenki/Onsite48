@@ -1,0 +1,13 @@
+id: br-pages-001
+tier: browser
+goal: Navigate pagination to page 3.
+fixtures:
+  browser_reset: true
+max_steps: 12
+max_cost_usd: 0.4
+grader:
+  type: browser_state
+  expect:
+    page_reached: 3
+tags:
+- browser

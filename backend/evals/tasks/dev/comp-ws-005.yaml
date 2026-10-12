@@ -1,0 +1,13 @@
+id: comp-ws-005
+tier: computer
+goal: >
+  Generate out/chart_data.csv with columns x,y and 5 rows, then produce a matplotlib bar chart saved as out/chart.png. Confirm both files exist.
+max_steps: 25
+max_cost_usd: 0.6
+grader:
+  type: exact_answer
+  expect:
+    value: "chart"
+tags:
+- computer
+- workspace

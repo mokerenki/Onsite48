@@ -1,0 +1,11 @@
+id: sa-parallel-read-only-001
+title: Parallel read tools in one turn
+tier: parallel
+goal: |
+  Lead issues multiple read-only tool calls in one model turn; writes remain sequential.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

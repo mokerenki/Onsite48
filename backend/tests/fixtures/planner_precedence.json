@@ -1,0 +1,361 @@
+{
+  "": null,
+  "add a calendar event called standup on 2026-10-02 at 10:00": [
+    {
+      "step_id": "create-calendar-event",
+      "tool_args": {
+        "attendees": [],
+        "end": "2026-10-02T10:30:00+02:00",
+        "location": "",
+        "notes": "",
+        "start": "2026-10-02T10:00:00+02:00",
+        "summary": "standup"
+      },
+      "tool_name": "google_calendar_create_event"
+    }
+  ],
+  "build me a landing page for a coffee shop": [
+    {
+      "step_id": "clarify-website-brief",
+      "tool_args": {
+        "question": "Before I build the website, tell me the brand name, target audience, and either a preferred colour palette or permission to choose one. You can answer in one message; if you have no preference, say 'choose for me'."
+      },
+      "tool_name": null
+    }
+  ],
+  "check my email": [
+    {
+      "step_id": "list-gmail-messages",
+      "tool_args": {
+        "exact": false,
+        "limit": 10,
+        "query": "in:inbox"
+      },
+      "tool_name": "gmail_search_messages"
+    }
+  ],
+  "check my inbox and then draft a reply": null,
+  "compare example.com and example.org": [
+    {
+      "step_id": "compare-source-a",
+      "tool_args": {
+        "query": "example.com"
+      },
+      "tool_name": "browser"
+    },
+    {
+      "step_id": "compare-source-b",
+      "tool_args": {
+        "query": "example.org"
+      },
+      "tool_name": "browser"
+    },
+    {
+      "step_id": "compare-synthesis",
+      "tool_args": {},
+      "tool_name": null
+    }
+  ],
+  "create a calendar event called standup on 2026-10-02 at 10:00": [
+    {
+      "step_id": "create-calendar-event",
+      "tool_args": {
+        "attendees": [],
+        "end": "2026-10-02T10:30:00+02:00",
+        "location": "",
+        "notes": "",
+        "start": "2026-10-02T10:00:00+02:00",
+        "summary": "standup"
+      },
+      "tool_name": "google_calendar_create_event"
+    }
+  ],
+  "create a draft to bob@acme.com saying hello": [
+    {
+      "step_id": "create-gmail-draft",
+      "tool_args": {},
+      "tool_name": "gmail_create_draft"
+    }
+  ],
+  "delete draft abc123def456": [
+    {
+      "step_id": "delete-gmail-draft",
+      "tool_args": {
+        "draft_id": "abc123def456"
+      },
+      "tool_name": "gmail_delete_draft"
+    }
+  ],
+  "delete message abc123def456": [
+    {
+      "step_id": "trash-gmail-message",
+      "tool_args": {
+        "message_id": "abc123def456"
+      },
+      "tool_name": "gmail_trash_message"
+    }
+  ],
+  "delete the draft about the budget": [
+    {
+      "step_id": "clarify-gmail-draft-delete-lookup",
+      "tool_args": {
+        "limit": 10
+      },
+      "tool_name": "gmail_list_drafts"
+    },
+    {
+      "step_id": "clarify-gmail-draft-delete",
+      "tool_args": {
+        "question": "Which draft should I delete? I will list your saved drafts with their IDs so you can pick one."
+      },
+      "tool_name": null
+    }
+  ],
+  "delete the email from Sarah": [
+    {
+      "step_id": "clarify-gmail-message-trash-lookup",
+      "tool_args": {
+        "limit": 5,
+        "query": "in:inbox"
+      },
+      "tool_name": "gmail_search_messages"
+    },
+    {
+      "step_id": "clarify-gmail-message-trash",
+      "tool_args": {
+        "question": "Which email should I move to Trash? I will show the matching emails with their IDs so you can pick one."
+      },
+      "tool_name": null
+    }
+  ],
+  "draft an email to the team about the budget": [
+    {
+      "step_id": "clarify-gmail-recipient",
+      "tool_args": {
+        "question": "What email address should this draft be addressed to?"
+      },
+      "tool_name": null
+    }
+  ],
+  "go to https://example.com/pricing": [
+    {
+      "step_id": "open_supplied_page",
+      "tool_args": {
+        "url": "https://example.com/pricing"
+      },
+      "tool_name": "computer_navigate"
+    },
+    {
+      "step_id": "read_supplied_page",
+      "tool_args": {
+        "limit": 20000,
+        "offset": 0
+      },
+      "tool_name": "computer_read_page"
+    },
+    {
+      "step_id": "inspect_supplied_page",
+      "tool_args": {},
+      "tool_name": "computer_inspect"
+    },
+    {
+      "step_id": "synthesize_from_page_evidence",
+      "tool_args": {},
+      "tool_name": null
+    }
+  ],
+  "how many drafts do I have": [
+    {
+      "step_id": "count-gmail-drafts",
+      "tool_args": {},
+      "tool_name": "gmail_count_drafts"
+    }
+  ],
+  "how many repositories do I have": [
+    {
+      "step_id": "count-github-repositories",
+      "tool_args": {
+        "count": true,
+        "limit": 1
+      },
+      "tool_name": "github_list_repositories"
+    }
+  ],
+  "how many unread emails are there": null,
+  "list my drafts": [
+    {
+      "step_id": "list-gmail-drafts",
+      "tool_args": {
+        "limit": 20
+      },
+      "tool_name": "gmail_list_drafts"
+    }
+  ],
+  "list my repositories": [
+    {
+      "step_id": "list-github-repositories",
+      "tool_args": {
+        "count": false,
+        "limit": 20
+      },
+      "tool_name": "github_list_repositories"
+    }
+  ],
+  "open https://example.com/pricing": [
+    {
+      "step_id": "open_supplied_page",
+      "tool_args": {
+        "url": "https://example.com/pricing"
+      },
+      "tool_name": "computer_navigate"
+    },
+    {
+      "step_id": "read_supplied_page",
+      "tool_args": {
+        "limit": 20000,
+        "offset": 0
+      },
+      "tool_name": "computer_read_page"
+    },
+    {
+      "step_id": "inspect_supplied_page",
+      "tool_args": {},
+      "tool_name": "computer_inspect"
+    },
+    {
+      "step_id": "synthesize_from_page_evidence",
+      "tool_args": {},
+      "tool_name": null
+    }
+  ],
+  "schedule a meeting with the team next Tuesday": null,
+  "search my email from: sarah@example.com": [
+    {
+      "step_id": "list-gmail-messages",
+      "tool_args": {
+        "exact": false,
+        "limit": 10,
+        "query": "in:inbox"
+      },
+      "tool_name": "gmail_search_messages"
+    }
+  ],
+  "send that draft": [
+    {
+      "step_id": "find-gmail-draft",
+      "tool_args": {
+        "limit": 20
+      },
+      "tool_name": "gmail_list_drafts"
+    },
+    {
+      "step_id": "send-gmail-existing-draft",
+      "tool_args": {
+        "draft_id": "$steps.find-gmail-draft.output.drafts[0].draft_id"
+      },
+      "tool_name": "gmail_send_message"
+    }
+  ],
+  "send the email to Sarah": [
+    {
+      "step_id": "clarify-gmail-send-recipient",
+      "tool_args": {
+        "question": "Which email address should receive this message?"
+      },
+      "tool_name": null
+    }
+  ],
+  "show me my inbox": [
+    {
+      "step_id": "list-gmail-messages",
+      "tool_args": {
+        "exact": false,
+        "limit": 10,
+        "query": "in:inbox"
+      },
+      "tool_name": "gmail_search_messages"
+    }
+  ],
+  "trash the message from Bob": [
+    {
+      "step_id": "clarify-gmail-message-trash-lookup",
+      "tool_args": {
+        "limit": 5,
+        "query": "in:inbox"
+      },
+      "tool_name": "gmail_search_messages"
+    },
+    {
+      "step_id": "clarify-gmail-message-trash",
+      "tool_args": {
+        "question": "Which email should I move to Trash? I will show the matching emails with their IDs so you can pick one."
+      },
+      "tool_name": null
+    }
+  ],
+  "trash the message with id abc123def456": [
+    {
+      "step_id": "clarify-gmail-message-trash-lookup",
+      "tool_args": {
+        "limit": 5,
+        "query": "in:inbox"
+      },
+      "tool_name": "gmail_search_messages"
+    },
+    {
+      "step_id": "clarify-gmail-message-trash",
+      "tool_args": {
+        "question": "Which email should I move to Trash? I will show the matching emails with their IDs so you can pick one."
+      },
+      "tool_name": null
+    }
+  ],
+  "what is on my calendar tomorrow": [
+    {
+      "step_id": "list-calendar-events",
+      "tool_args": {
+        "max_results": 50,
+        "time_max": "2026-09-29T23:59:59.999999+02:00",
+        "time_min": "2026-09-29T00:00:00+02:00"
+      },
+      "tool_name": "google_calendar_list_events"
+    }
+  ],
+  "what is the current time in Tokyo": [
+    {
+      "step_id": "get-current-time",
+      "tool_args": {
+        "timezone": "Asia/Tokyo"
+      },
+      "tool_name": "current_time"
+    }
+  ],
+  "what is the weather and what time is it": null,
+  "what time is it": [
+    {
+      "step_id": "get-current-time",
+      "tool_args": {},
+      "tool_name": "current_time"
+    }
+  ],
+  "what time is it in Atlantis": [
+    {
+      "step_id": "get-current-time",
+      "tool_args": {
+        "timezone": "UTC",
+        "unresolved_location_hint": "Atlantis"
+      },
+      "tool_name": "current_time"
+    }
+  ],
+  "who won the world cup in 1998": null,
+  "write a draft reply to Sarah": [
+    {
+      "step_id": "clarify-gmail-recipient",
+      "tool_args": {
+        "question": "What email address should this draft be addressed to?"
+      },
+      "tool_name": null
+    }
+  ]
+}

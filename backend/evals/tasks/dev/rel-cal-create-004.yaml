@@ -1,0 +1,15 @@
+id: rel-cal-create-004
+tier: reliability
+goal: Add a calendar event 'Doctor appointment' on 2026-10-20T10:00:00Z to 2026-10-20T10:45:00Z.
+fixtures:
+  google:
+    events: []
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: calendar_state
+  expect:
+    event:
+      summary: Doctor appointment
+tags:
+- calendar

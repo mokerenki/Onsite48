@@ -1,0 +1,25 @@
+{
+  "task_id": "lh-cost-budget-guard-001",
+  "status": "succeeded",
+  "sanitized": true,
+  "summary": "Stopped under $0.50 budget with partial cleaned.csv and cost_report.",
+  "steps_excerpt": [
+    {
+      "step": 1,
+      "event": "model",
+      "note": "goal understood; todo.md initialized"
+    },
+    {
+      "step": 2,
+      "event": "tool",
+      "name": "write_file",
+      "note": "workspace bootstrap"
+    },
+    {
+      "step": -1,
+      "event": "finish",
+      "status": "succeeded"
+    }
+  ],
+  "root_cause": null
+}

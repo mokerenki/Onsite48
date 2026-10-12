@@ -1,0 +1,15 @@
+# Use a base image with Playwright dependencies
+FROM mcr.microsoft.com/playwright/python:v1.44.0-jammy
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy your application code
+COPY . .
+
+# Command to run your FastAPI app (if this were a separate service)
+# For now, Playwright is integrated into the main backend service
+# CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,15 @@
+id: rel-cal-create-tz-001
+tier: reliability
+goal: Create an event 'Tokyo call' starting 2026-10-12T01:00:00+09:00 ending 2026-10-12T02:00:00+09:00.
+fixtures:
+  google:
+    events: []
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: calendar_state
+  expect:
+    event:
+      summary: Tokyo call
+tags:
+- calendar

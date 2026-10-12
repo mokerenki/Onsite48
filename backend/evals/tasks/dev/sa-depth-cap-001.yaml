@@ -1,0 +1,11 @@
+id: sa-depth-cap-001
+title: Depth cap blocks nested spawn
+tier: parallel
+goal: |
+  Worker may_spawn=False / depth_cap; nested spawn raises.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

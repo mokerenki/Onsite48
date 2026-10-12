@@ -1,0 +1,23 @@
+# browser-sandbox.yaml — Phase 2 (SCAFFOLD)
+#
+# Kubernetes sandbox template for browser automation.
+# TODO: Define Pod spec with Playwright/Chromium container,
+#       resource limits, network policies, volume mounts.
+
+# SCAFFOLD — Phase 2 implementation pending
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: browser-sandbox-{{SANDBOX_ID}}
+#   namespace: aether-sandboxes
+# spec:
+#   containers:
+#   - name: browser
+#     image: aether/sandbox-browser:latest
+#     resources:
+#       limits:
+#         cpu: "1"
+#         memory: "1Gi"
+#     securityContext:
+#       runAsNonRoot: true
+#       readOnlyRootFilesystem: true

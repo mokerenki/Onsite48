@@ -1,0 +1,11 @@
+id: sa-wide-50-headline-001
+title: "Headline: 50-item wide research"
+tier: parallel
+goal: |
+  wide_map 50 synthetic topics with role=researcher, concurrency=8, per_item_budget cost_usd=0.05. Report completion rate, median time, cost, per-item accuracy.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

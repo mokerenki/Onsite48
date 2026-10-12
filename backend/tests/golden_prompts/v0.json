@@ -1,0 +1,7 @@
+[
+  {"id":"gmail.drafts.count.001","prompt":"How many email drafts do I have?","expected_intent":{"resource":"email_drafts","operation":"count","exactness":"exact"},"expected_tools":["gmail_count_drafts"],"forbidden_tools":["gmail_search_messages"],"requires_model_planner":false},
+  {"id":"gmail.drafts.list.001","prompt":"Show my latest 4 drafts","expected_intent":{"resource":"email_drafts","operation":"list","exactness":"paginated"},"expected_tools":["gmail_list_drafts"],"forbidden_tools":["gmail_search_messages"],"requires_model_planner":false},
+  {"id":"gmail.drafts.create.001","prompt":"Create a Gmail draft to jane@example.com saying hello","expected_intent":{"resource":"email_drafts","operation":"create"},"expected_tools":["gmail_create_draft"],"forbidden_tools":["gmail_send_message"],"requires_model_planner":false},
+  {"id":"time.current.001","prompt":"What time is it?","expected_intent":{"resource":"time","operation":"get","exactness":"exact"},"expected_tools":["current_time"],"forbidden_tools":[],"requires_model_planner":false},
+  {"id":"compound.time.research.001","prompt":"What time is it and who is Mochelo Lefoka?","expected_intent":{"resource":"time","operation":"get","exactness":"exact"},"expected_tools":[],"forbidden_tools":["gmail_search_messages"],"requires_model_planner":true}
+]

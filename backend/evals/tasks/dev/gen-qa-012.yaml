@@ -1,0 +1,12 @@
+id: gen-qa-012
+tier: general
+goal: 15% of 200?
+max_steps: 6
+max_cost_usd: 0.15
+grader:
+  type: exact_answer
+  expect:
+    value: '30'
+    numeric: true
+tags:
+- general

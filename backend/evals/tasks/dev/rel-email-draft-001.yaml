@@ -1,0 +1,21 @@
+id: rel-email-draft-001
+tier: reliability
+goal: Draft an email to alice@example.com with subject 'Q4 sync' and body 'Let's meet
+  next Tuesday to review Q4 numbers.'
+fixtures:
+  google:
+    messages: []
+    drafts: []
+    events: []
+max_steps: 8
+max_cost_usd: 0.3
+grader:
+  type: gmail_state
+  expect:
+    draft:
+      to: alice@example.com
+      subject: Q4 sync
+      body: Q4 numbers
+tags:
+- email
+- draft

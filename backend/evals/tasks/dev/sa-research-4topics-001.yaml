@@ -1,0 +1,11 @@
+id: sa-research-4topics-001
+title: Research four topics in parallel and produce a merged report
+tier: parallel
+goal: |
+  Use spawn_agents or wide_map with role=researcher on topics: quantum computing 2026, solid-state batteries, EU AI Act status, open-source LLM benchmarks. Merge into one markdown report.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

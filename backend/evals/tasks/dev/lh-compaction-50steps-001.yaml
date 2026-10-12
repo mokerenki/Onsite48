@@ -1,0 +1,19 @@
+id: lh-compaction-50steps-001
+tier: long_horizon
+goal: >
+  Maintain a running research notebook under /workspace/notebook.md. For each of
+  55 sequential topics (topic-001 through topic-055), append a 3-sentence summary
+  of a fictional paper about that topic, then update todo.md. Force at least two
+  context compactions by keeping all intermediate notes. Finish only when all 55
+  entries exist and a final index is written.
+expected_min_steps: 50
+expected_compactions: 2
+timeout_s: 1800
+tags: [long_horizon, compaction, filesystem]
+grader:
+  type: filesystem
+  checks:
+    - path: /workspace/notebook.md
+      contains_count: 55
+    - path: /workspace/todo.md
+      exists: true

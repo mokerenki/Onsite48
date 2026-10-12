@@ -1,0 +1,26 @@
+id: rel-cal-cancel-001
+tier: reliability
+goal: Cancel the event titled 'Old planning session'.
+fixtures:
+  google:
+    events:
+    - id: old1
+      summary: Old planning session
+      start:
+        dateTime: '2026-10-05T12:00:00Z'
+      end:
+        dateTime: '2026-10-05T13:00:00Z'
+    - id: keep1
+      summary: Keep this meeting
+      start:
+        dateTime: '2026-10-05T14:00:00Z'
+      end:
+        dateTime: '2026-10-05T15:00:00Z'
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: calendar_state
+  expect:
+    deleted_summary: Old planning session
+tags:
+- calendar

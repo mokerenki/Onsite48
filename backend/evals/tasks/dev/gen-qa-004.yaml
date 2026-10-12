@@ -1,0 +1,12 @@
+id: gen-qa-004
+tier: general
+goal: Days in 2024?
+max_steps: 6
+max_cost_usd: 0.15
+grader:
+  type: exact_answer
+  expect:
+    value: '366'
+    numeric: true
+tags:
+- general

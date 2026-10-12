@@ -1,0 +1,16 @@
+id: lh-idempotent-resume-001
+tier: long_horizon
+goal: >
+  Create 30 calendar events via a mutating connector tool that is idempotent
+  by client_request_id. After 15 events, simulate a process crash and resume
+  from the journal. Final state must contain exactly 30 events (no duplicates)
+  and a ledger file proving each id was attempted once.
+expected_min_steps: 35
+expected_restarts: 1
+timeout_s: 1600
+tags: [long_horizon, idempotency, resume]
+grader:
+  type: filesystem
+  checks:
+    - path: /workspace/event_ledger.json
+      exists: true

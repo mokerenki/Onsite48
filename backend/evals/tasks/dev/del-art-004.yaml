@@ -1,0 +1,12 @@
+id: del-art-004
+tier: deliverables
+goal: Produce deliverable artifact task 4.
+max_steps: 15
+max_cost_usd: 0.6
+grader:
+  type: html
+  expect:
+    must_contain:
+    - x
+tags:
+- deliverables

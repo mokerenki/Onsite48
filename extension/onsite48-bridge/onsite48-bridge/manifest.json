@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Onsite48 Browser",
+  "version": "3.1.0",
+  "description": "My Browser for Onsite48. Pair once, authorize a task, and let the agent work inside a task-named tab group. You can watch, take over, resume, or close the group to stop. Operates only in tabs authorized for a task; never uses unrelated focused tabs as the primary workspace.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "tabGroups",
+    "scripting",
+    "alarms",
+    "downloads",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Onsite48 Browser",
+    "default_popup": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/challenge-detector.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

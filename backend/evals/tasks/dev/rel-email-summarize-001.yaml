@@ -1,0 +1,32 @@
+id: rel-email-summarize-001
+tier: reliability
+goal: Summarize my unread emails.
+fixtures:
+  google:
+    messages:
+    - id: u1
+      from: alice@example.com
+      subject: Q4 planning notes
+      body: Notes
+      labelIds:
+      - INBOX
+      - UNREAD
+      internalDate: '1'
+    - id: u2
+      from: eve@example.com
+      subject: Contract renewal
+      body: Renew
+      labelIds:
+      - INBOX
+      - UNREAD
+      internalDate: '2'
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: research_answer
+  expect:
+    must_contain:
+    - Q4
+    - Contract
+tags:
+- email

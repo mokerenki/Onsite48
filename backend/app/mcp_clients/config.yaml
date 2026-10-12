@@ -1,0 +1,33 @@
+# Each entry is an MCP server endpoint.
+# For local servers, use http://localhost:port/sse
+# For cloud MCP services (like Google Maps, BigQuery), use their provided URLs.
+
+salesforce:
+  url: "https://your-mcp-gateway/salesforce/sse"
+  headers:
+    Authorization: "Bearer ${SALESFORCE_ACCESS_TOKEN}"
+  timeout: 30.0
+
+slack:
+  url: "https://your-mcp-gateway/slack/sse"
+  headers:
+    Authorization: "Bearer ${SLACK_BOT_TOKEN}"
+
+whatsapp:
+  url: "https://your-whatsapp-mcp-server/sse"   # or a local endpoint
+  headers:
+    X-API-Key: "${WHATSAPP_API_KEY}"
+
+# Google services – you can use Google's official MCP endpoints:
+google_workspace:
+  url: "https://public-sides-play.loca.lt/sse"
+  timeout: 60.0
+
+google_bigquery:
+  url: "https://bigquery.googleapis.com/mcp"
+  headers:
+    Authorization: "Bearer ${GCP_OAUTH_TOKEN}"   # Or use service account key
+
+google_calendar:
+  url: "http://localhost:${GOOGLE_CALENDAR_MCP_PORT:-3001}/sse"
+  timeout: 30.0

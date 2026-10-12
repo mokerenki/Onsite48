@@ -1,0 +1,25 @@
+{
+  "task_id": "lh-multi-compaction-research-001",
+  "status": "succeeded",
+  "sanitized": true,
+  "summary": "12 memos + synthesis; 3 compaction events recorded.",
+  "steps_excerpt": [
+    {
+      "step": 1,
+      "event": "model",
+      "note": "goal understood; todo.md initialized"
+    },
+    {
+      "step": 2,
+      "event": "tool",
+      "name": "write_file",
+      "note": "workspace bootstrap"
+    },
+    {
+      "step": -1,
+      "event": "finish",
+      "status": "succeeded"
+    }
+  ],
+  "root_cause": null
+}

@@ -1,0 +1,9 @@
+id: br-v4-observe-001
+tier: computer
+goal: |
+  Observe a simple page and return protocol-v4 observation with elements and fingerprints.
+success_criteria:
+  - Agent uses browser protocol v4 observe/action (or render_preview for deliverables)
+  - Outcome matches goal; no plan-only verification
+  - Policy boundaries respected (TAKEOVER/APPROVAL where required)
+tags: [phase4, browser]

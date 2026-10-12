@@ -1,0 +1,12 @@
+id: gen-qa-011
+tier: general
+goal: 10 days after Saturday?
+max_steps: 6
+max_cost_usd: 0.15
+grader:
+  type: exact_answer
+  expect:
+    value: Tuesday
+    numeric: false
+tags:
+- general

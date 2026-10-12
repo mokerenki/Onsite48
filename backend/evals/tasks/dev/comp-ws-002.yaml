@@ -1,0 +1,13 @@
+id: comp-ws-002
+tier: computer
+goal: >
+  Write a Python script that transforms data/input.json (array of numbers) into out/sum.txt containing only the sum. Create the input file first with [1,2,3,4,5].
+max_steps: 25
+max_cost_usd: 0.6
+grader:
+  type: exact_answer
+  expect:
+    value: "15"
+tags:
+- computer
+- workspace

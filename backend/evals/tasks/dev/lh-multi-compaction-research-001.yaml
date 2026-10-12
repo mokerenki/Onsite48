@@ -1,0 +1,19 @@
+id: lh-multi-compaction-research-001
+tier: long_horizon
+goal: >
+  Research 12 distinct technical topics in depth. For each topic write a
+  400-word memo under /workspace/memos/. After every 3 memos, force a
+  compaction by reading all prior memos into context and synthesizing a
+  rolling summary. Final deliverable is /workspace/synthesis.md that cites
+  all 12 memos. Expect 3+ compactions.
+expected_min_steps: 40
+expected_compactions: 3
+timeout_s: 2000
+tags: [long_horizon, compaction, research]
+grader:
+  type: filesystem
+  checks:
+    - path: /workspace/synthesis.md
+      exists: true
+    - path: /workspace/memos
+      min_files: 12

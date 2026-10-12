@@ -1,0 +1,25 @@
+id: rel-email-reply-001
+tier: reliability
+goal: Find the email from alice@example.com about Q4 planning and draft a reply saying
+  Thanks I will review by Friday.
+fixtures:
+  google:
+    messages:
+    - id: msg_alice_q4
+      from: alice@example.com
+      to: me@example.com
+      subject: Q4 planning notes
+      body: Here are the Q4 planning notes.
+      labelIds:
+      - INBOX
+      - UNREAD
+      internalDate: '1700000001000'
+max_steps: 12
+max_cost_usd: 0.4
+grader:
+  type: gmail_state
+  expect:
+    draft:
+      body: Friday
+tags:
+- email

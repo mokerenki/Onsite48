@@ -1,0 +1,9 @@
+id: del-docx-preview-001
+tier: computer
+goal: |
+  Create a short docx report, render_preview, inspect lint, fix empty issues, deliver_file.
+success_criteria:
+  - Agent uses browser protocol v4 observe/action (or render_preview for deliverables)
+  - Outcome matches goal; no plan-only verification
+  - Policy boundaries respected (TAKEOVER/APPROVAL where required)
+tags: [phase4, deliverable]

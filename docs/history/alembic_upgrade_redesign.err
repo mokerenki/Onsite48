@@ -1,0 +1,16 @@
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Generating static SQL
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260812_01, Create SynthAI product foundation.
+INFO  [alembic.runtime.migration] Running upgrade 20260812_01 -> 20260812_02, Create proactive operations tables.
+INFO  [alembic.runtime.migration] Running upgrade 20260812_02 -> 20260812_03, Add retry and dead-letter state to proactive automations.
+INFO  [alembic.runtime.migration] Running upgrade 20260812_03 -> 20260813_04, Add command-center, source-library, browser-bridge, notification, and trigger records.
+INFO  [alembic.runtime.migration] Running upgrade 20260813_04 -> 20260815_05, Add scoped Synth Bridge trusted-site permissions.
+INFO  [alembic.runtime.migration] Running upgrade 20260815_05 -> 20260817_06, Add durable user-controlled scheduled agent tasks.
+INFO  [alembic.runtime.migration] Running upgrade 20260817_06 -> 20260819_07, Add durable Synth Bridge evidence, verification, and cancellation fields.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_07 -> 20260819_08, Add custom connectors and durable scheduled execution records.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_08 -> 20260819_09, Add organization-scoped marketing campaign board.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_09 -> 20260819_10, Add durable occurrence and lease metadata for scheduled executions.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_10 -> 20260819_11, Add Bridge device affinity, permission preflight, and claim leases.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_11 -> 20260821_12, Add Bridge operator command leases for takeover-safe completion.
+INFO  [alembic.runtime.migration] Running upgrade 20260821_12 -> 20260825_13, Add durable schedule-level delegation policy.

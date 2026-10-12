@@ -1,0 +1,9 @@
+id: del-ab-loop-001
+tier: computer
+goal: |
+  A/B: same docx task with and without render_preview loop (harness flag).
+success_criteria:
+  - Agent uses browser protocol v4 observe/action (or render_preview for deliverables)
+  - Outcome matches goal; no plan-only verification
+  - Policy boundaries respected (TAKEOVER/APPROVAL where required)
+tags: [phase4, deliverable]

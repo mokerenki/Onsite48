@@ -1,0 +1,12 @@
+id: gen-qa-005
+tier: general
+goal: Capital of France?
+max_steps: 6
+max_cost_usd: 0.15
+grader:
+  type: exact_answer
+  expect:
+    value: Paris
+    numeric: false
+tags:
+- general

@@ -1,0 +1,11 @@
+id: sa-rate-limit-partial-001
+title: Worker rate-limits mid-run; partial table
+tier: parallel
+goal: |
+  Simulate rate-limit failures on 20% of items; wide_map returns partial with failed_items reasons.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

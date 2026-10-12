@@ -1,0 +1,11 @@
+id: sa-cancel-propagate-001
+title: Cancel parent cancels children
+tier: parallel
+goal: |
+  Start long-running workers; cancel parent; all children status=cancelled.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

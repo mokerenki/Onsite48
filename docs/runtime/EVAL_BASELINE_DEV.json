@@ -1,0 +1,16 @@
+{
+  "aggregate": {
+    "overall": {"n": 82, "pass@1": 0.268, "passed": 22, "median_steps": 0, "p90_steps": 1, "mean_cost": 0.0, "cost_per_success": 0.0},
+    "tiers": {
+      "reliability": {"n": 20, "pass@1": 0.85, "passed": 17},
+      "general": {"n": 12, "pass@1": 0.0, "passed": 0},
+      "deliverables": {"n": 14, "pass@1": 0.0, "passed": 0},
+      "research": {"n": 10, "pass@1": 0.0, "passed": 0},
+      "data": {"n": 8, "pass@1": 0.0, "passed": 0},
+      "browser": {"n": 12, "pass@1": 0.167, "passed": 2},
+      "compound": {"n": 6, "pass@1": 0.5, "passed": 3}
+    },
+    "repeat": 1,
+    "note": "Offline deterministic adapter baseline; computer tiers expected near zero"
+  }
+}

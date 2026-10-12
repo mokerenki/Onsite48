@@ -1,0 +1,25 @@
+{
+  "task_id": "lh-parallel-wide-then-reduce-001",
+  "status": "succeeded",
+  "sanitized": true,
+  "summary": "wide_map 40 items, 10% partial fail labeled, ranked_headlines.md produced.",
+  "steps_excerpt": [
+    {
+      "step": 1,
+      "event": "model",
+      "note": "goal understood; todo.md initialized"
+    },
+    {
+      "step": 2,
+      "event": "tool",
+      "name": "write_file",
+      "note": "workspace bootstrap"
+    },
+    {
+      "step": -1,
+      "event": "finish",
+      "status": "succeeded"
+    }
+  ],
+  "root_cause": null
+}

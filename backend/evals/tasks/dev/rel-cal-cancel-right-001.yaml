@@ -1,0 +1,29 @@
+id: rel-cal-cancel-right-001
+tier: reliability
+goal: There are two events named similarly. Cancel only 'Weekly sync (marketing)',
+  not 'Weekly sync (eng)'.
+fixtures:
+  google:
+    events:
+    - id: ws_m
+      summary: Weekly sync (marketing)
+      start:
+        dateTime: '2026-10-07T11:00:00Z'
+      end:
+        dateTime: '2026-10-07T11:30:00Z'
+    - id: ws_e
+      summary: Weekly sync (eng)
+      start:
+        dateTime: '2026-10-07T11:00:00Z'
+      end:
+        dateTime: '2026-10-07T11:30:00Z'
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: calendar_state
+  expect:
+    deleted_summary: Weekly sync (marketing)
+    event:
+      summary: Weekly sync (eng)
+tags:
+- calendar

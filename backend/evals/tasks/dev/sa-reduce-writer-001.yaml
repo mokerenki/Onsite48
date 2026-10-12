@@ -1,0 +1,11 @@
+id: sa-reduce-writer-001
+title: wide_map then reduce with writer
+tier: parallel
+goal: |
+  wide_map 5 items then reduce_role=writer to produce a single executive summary from the table file by reference.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

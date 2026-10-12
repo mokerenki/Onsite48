@@ -1,0 +1,13 @@
+id: comp-ws-006
+tier: computer
+goal: >
+  Use python-docx if available (pip install python-docx if needed) to write a short report to out/report.docx containing the word 'Executive'.
+max_steps: 25
+max_cost_usd: 0.6
+grader:
+  type: exact_answer
+  expect:
+    value: "Executive"
+tags:
+- computer
+- workspace

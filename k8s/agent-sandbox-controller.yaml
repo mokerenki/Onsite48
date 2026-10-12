@@ -1,0 +1,29 @@
+# agent-sandbox-controller.yaml — Phase 2 (SCAFFOLD)
+#
+# Custom Resource Definition for sandbox lifecycle management.
+# TODO: Define Sandbox CRD, controller deployment, RBAC.
+
+# SCAFFOLD — Phase 2 implementation pending
+# apiVersion: apiextensions.k8s.io/v1
+# kind: CustomResourceDefinition
+# metadata:
+#   name: sandboxes.aether.io
+# spec:
+#   group: aether.io
+#   versions:
+#   - name: v1
+#     served: true
+#     storage: true
+#     schema:
+#       openAPIV3Schema:
+#         type: object
+#         properties:
+#           spec:
+#             type: object
+#             properties:
+#               template:
+#                 type: string
+#                 enum: [browser, terminal, desktop]
+#               timeout:
+#                 type: integer
+#                 default: 300

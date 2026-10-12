@@ -1,0 +1,18 @@
+id: lh-cost-budget-guard-001
+tier: long_horizon
+goal: >
+  Perform iterative data cleaning on a 500-row CSV under a strict $0.50 cost
+  budget and 60-step limit. Agent must monitor its own cost, stop cleanly when
+  approaching the budget, and leave a partial-but-valid cleaned file plus a
+  cost report.
+expected_min_steps: 15
+max_cost_usd: 0.50
+timeout_s: 900
+tags: [long_horizon, cost, budget]
+grader:
+  type: filesystem
+  checks:
+    - path: /workspace/cost_report.md
+      exists: true
+    - path: /workspace/cleaned.csv
+      exists: true

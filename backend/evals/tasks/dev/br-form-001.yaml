@@ -1,0 +1,15 @@
+id: br-form-001
+tier: browser
+goal: Submit form at http://127.0.0.1:8766/browser/form name Eval Bot email bot@eval.test
+fixtures:
+  browser_reset: true
+max_steps: 15
+max_cost_usd: 0.5
+grader:
+  type: browser_state
+  expect:
+    form_submitted:
+      name: Eval Bot
+      email: bot@eval.test
+tags:
+- browser

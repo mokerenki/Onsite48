@@ -1,0 +1,11 @@
+id: sa-contention-draft-001
+title: Two workers race for the same gmail draft
+tier: parallel
+goal: |
+  spawn two workers that both attempt to mutate gmail:draft:shared-1; assert only one succeeds without duplicate side effects.
+success_criteria:
+  - Uses spawn_agent, spawn_agents, await_agents, or wide_map
+  - No lead history leaked to workers
+  - Partial failures reported without poisoning the whole result
+  - Cost and status surfaced for each child
+grader: outcome

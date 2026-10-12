@@ -1,0 +1,15 @@
+id: rel-cal-create-003
+tier: reliability
+goal: Schedule '1:1 with manager' on 2026-10-15 from 16:00 to 16:30 UTC.
+fixtures:
+  google:
+    events: []
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: calendar_state
+  expect:
+    event:
+      summary: 1:1 with manager
+tags:
+- calendar

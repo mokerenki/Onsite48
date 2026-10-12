@@ -1,0 +1,9 @@
+id: br-v4-mutate-001
+tier: computer
+goal: |
+  DOM that mutates after load: observe, wait, re-observe, then act on fresh refs.
+success_criteria:
+  - Agent uses browser protocol v4 observe/action (or render_preview for deliverables)
+  - Outcome matches goal; no plan-only verification
+  - Policy boundaries respected (TAKEOVER/APPROVAL where required)
+tags: [phase4, browser]

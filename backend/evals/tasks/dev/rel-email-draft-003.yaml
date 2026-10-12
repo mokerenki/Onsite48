@@ -1,0 +1,14 @@
+id: rel-email-draft-003
+tier: reliability
+goal: Write a short draft email to team@example.com subject 'Standup cancelled' body
+  'Tomorrow standup is cancelled.'
+max_steps: 6
+max_cost_usd: 0.2
+grader:
+  type: gmail_state
+  expect:
+    draft:
+      to: team@example.com
+      subject: Standup cancelled
+tags:
+- email

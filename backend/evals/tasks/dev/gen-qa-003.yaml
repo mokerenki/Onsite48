@@ -1,0 +1,12 @@
+id: gen-qa-003
+tier: general
+goal: Train 120km in 1.5h speed?
+max_steps: 6
+max_cost_usd: 0.15
+grader:
+  type: exact_answer
+  expect:
+    value: '80'
+    numeric: true
+tags:
+- general

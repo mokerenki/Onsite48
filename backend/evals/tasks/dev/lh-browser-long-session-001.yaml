@@ -1,0 +1,16 @@
+id: lh-browser-long-session-001
+tier: long_horizon
+goal: >
+  Open a multi-page documentation site, navigate through at least 15 pages,
+  extract headings and key paragraphs into /workspace/scraped/, handling
+  stale-frame recovery at least twice. Write a consolidated outline at the end.
+expected_min_steps: 30
+timeout_s: 1800
+tags: [long_horizon, browser, recovery]
+grader:
+  type: filesystem
+  checks:
+    - path: /workspace/scraped
+      min_files: 10
+    - path: /workspace/outline.md
+      exists: true

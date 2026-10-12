@@ -1,0 +1,11 @@
+id: data-csv-006
+tier: data
+goal: Data analysis task 6.
+max_steps: 12
+max_cost_usd: 0.4
+grader:
+  type: exact_answer
+  expect:
+    value: placeholder
+tags:
+- data

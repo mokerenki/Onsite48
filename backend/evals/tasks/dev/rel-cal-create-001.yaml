@@ -1,0 +1,18 @@
+id: rel-cal-create-001
+tier: reliability
+goal: Create a calendar event titled 'Design review' starting 2026-10-10T15:00:00Z
+  ending 2026-10-10T16:00:00Z with attendee alice@example.com.
+fixtures:
+  google:
+    events: []
+max_steps: 10
+max_cost_usd: 0.4
+grader:
+  type: calendar_state
+  expect:
+    event:
+      summary: Design review
+      attendee: alice@example.com
+      start_contains: 2026-10-10T15
+tags:
+- calendar

@@ -1,0 +1,21 @@
+id: rel-email-trash-001
+tier: reliability
+goal: 'Move the email with subject ''Invoice #4421'' to trash.'
+fixtures:
+  google:
+    messages:
+    - id: msg_inv
+      from: bob@example.com
+      subject: 'Invoice #4421'
+      body: inv
+      labelIds:
+      - INBOX
+      internalDate: '1'
+max_steps: 8
+max_cost_usd: 0.3
+grader:
+  type: gmail_state
+  expect:
+    trashed_id: msg_inv
+tags:
+- email

@@ -1,0 +1,57 @@
+{
+  "verdict": "pass_with_observations",
+  "summary": "The change set largely adheres to the stated acceptance criteria:\n- CAPTCHA handling is human-controlled with a structured human_verification_required response and no solver network calls.\n- Deterministic active-tab shortcuts (bridge_read_active_tab) are gated by tool-registration status and the planner correctly falls back to direct URL or normal planning in non-Bridge contexts.\n- The local browser extension implements a clean-room, user-controlled Onsite48 Bridge (bounded long-poll, read/inspect/scroll/navigate, screenshot, controlled click/type, and pause/stop/takeover semantics).\n- The implementation avoids debugger, cookies, network interception, CAPTCHA bypassing, automatic form submission, and unbounded data transfers; gating is policy-driven.\n- Click/type/screenshot/tab actions are approval-gated by backend policy; trusted-site rules are intentionally limited to read/inspect/scroll/same-host navigation.\n- The codebase presents genuine correctness and security-conscious design without obvious architectural blockers. Some observations suggesting improvements are listed below.\n",
+  "blockers": [],
+  "observations": [
+    {
+      "file": "backend/app/services/auth_handler.py",
+      "observation": "CAPTCHA detection and handoff are clearly separated from solving logic. If a CAPTCHA is detected by _detect_captcha(page), login returns a structured handoff via _handle_captcha(page, user_id, site) with status 'requires_human_verification' and code 'human_verification_required'. This behavior is exercised by tests (test_login_captcha_returns_human_verification_without_solver_network_call). The CAPTCHA solver path is intentionally absent; there is no network client invocation during CAPTCHA handling as evidenced by the test monkeypatch ensuring AyncClient is not used.",
+      "recommendation": "Maintain strict separation between detection and solving; keep tests verifying no solver network calls and ensure human_verification_required remains the sole outcome for CAPTCHA scenarios."
+    },
+    {
+      "file": "backend/app/agents/planner.py",
+      "observation": "Deterministic direct-url planning path is explicit in _direct_url_plan(goal) and emits computer_navigate/computer_read_page/computer_inspect steps when a URL is detected and the registry provides those tools. The test test_explicit_url_uses_deterministic_isolated_computer_plan confirms the planner prefers this deterministic path before model planning. This aligns with the requirement that direct URL shortcuts require their computer tools.",
+      "recommendation": "Continue to guard the deterministic path with _plan_tools_available() so that phantom bridge shortcuts do not appear in non-Bridge runtimes."
+    },
+    {
+      "file": "backend/app/tools/registry.py",
+      "observation": "The system uses SAFE_TRUSTABLE_COMMANDS to distinguish read/inspect/scroll/navigation from higher-risk actions. In browser_bridge, allowed capabilities include safe read/inspect/scroll/navigate and additional capabilities (capture/read/open/click/fill) with appropriate gating. This separation ensures that high-risk actions remain approval-gated even when the extension is trusted.",
+      "recommendation": "Preserve this distinction and consider adding explicit unit tests that cover cross-host navigation vs. same-host restriction to ensure policy fidelity across future changes."
+    },
+    {
+      "file": "extension/onsite48-bridge/background.js",
+      "observation": "The extension implements long-polling with bounded wait cycles and supports a wide set of actions (read/inspect/scroll/navigate/capture/open/click/fill). It enforces per-action approval by backend policy via the queue_and_wait flow in the backend (requires_approval = not trusted). The minimal-virus surface and explicit permission checks (read-only vs high-impact actions) align with the design constraints.",
+      "recommendation": "Maintain strict alignment between browser-side capability grants and backend-approved actions; consider documenting policy mappings in extension comments for future maintainers."
+    },
+    {
+      "file": "backend/app/agents/executor.py",
+      "observation": "_tool_output_without_screenshot sanitizes results by redacting screenshot data URLs from outputs and contexts to prevent large or sensitive data from leaking into model context. This supports safe bounded context transmission.",
+      "recommendation": "Keep redaction logic in place and consider extending similar sanitization for any future binary artifacts."
+    },
+    {
+      "file": "extension/onsite48-bridge/operator-overlay.js",
+      "observation": "Operator overlay provides user-visible controls for takeover/stop with a lightweight UI and signals state changes back to the extension via messages. This supports user-controlled operation and pause/takeover semantics.",
+      "recommendation": "Ensure accessibility and keyboard operability for the overlay to improve usability for compliance-focused environments."
+    },
+    {
+      "file": "extension/onsite48-bridge/popup.js",
+      "observation": "Popup includes pairing and status UI with explicit controls to pair, poll, sync, pause, and resume. This reinforces user-visible, user-driven control and auditable state transitions.",
+      "recommendation": "Maintain clear auditing of user actions in the UI and consider adding a simple log view for tailed actions for advanced users."
+    }
+  ],
+  "verified_strengths": [
+    "Human-controlled CAPTCHA handling returning structured human_verification_required (backend/app/services/auth_handler.py).",
+    "Deterministic active-tab planning path via _direct_url_plan and bridge short-cut gating in Planner (backend/app/agents/planner.py).",
+    "Clean-room local browser bridge implementation with bounded long-polling, safe tab interactions, and explicit approval gating (backend/app/services/browser_bridge.py; extension/onsite48-bridge/background.js).",
+    "Sensible privacy-preserving handling of outputs by redacting screenshots from model context (_tool_output_without_screenshot in backend/app/agents/executor.py).",
+    "Back-end gating of actions through confirmation and user-intervention prompts; unknown actions are redirected to approvals or human handoffs (extension and server code around ToolConfirmationRequired and UserInterventionRequired).",
+    "User-visible, user-controlled operation in the extension (operator-overlay.js, popup.js) with pause/stop/takeover semantics and explicit consent flow."
+  ],
+  "acceptance_checks": {
+    "captcha_handoff": "pass",
+    "scheduled_shortcut_guard": "pass",
+    "user_controlled_operator": "pass",
+    "privileged_permission_boundary": "pass",
+    "approval_and_context_boundary": "pass"
+  }
+}

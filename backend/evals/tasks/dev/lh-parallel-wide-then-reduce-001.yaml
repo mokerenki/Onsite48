@@ -1,0 +1,15 @@
+id: lh-parallel-wide-then-reduce-001
+tier: long_horizon
+goal: >
+  Use wide_map to fan out 40 independent headline extractions, then reduce
+  results into a ranked list of 10. Mid-run inject a partial worker failure
+  (10% of children fail). Lead must complete with partial results labeled and
+  no duplicate writes.
+expected_min_steps: 20
+timeout_s: 1500
+tags: [long_horizon, wide_map, partial_failure]
+grader:
+  type: filesystem
+  checks:
+    - path: /workspace/ranked_headlines.md
+      exists: true

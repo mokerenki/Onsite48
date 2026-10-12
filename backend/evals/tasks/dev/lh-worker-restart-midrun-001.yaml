@@ -1,0 +1,16 @@
+id: lh-worker-restart-midrun-001
+tier: long_horizon
+goal: >
+  Spawn a researcher worker to gather 20 company profiles into /workspace/shared/.
+  After approximately half the work, simulate a worker process restart (kill and
+  re-attach). The lead must recover child state from artifacts, resume remaining
+  items without duplicating side effects, and produce a final CSV of all 20 rows.
+expected_min_steps: 25
+expected_restarts: 1
+timeout_s: 1500
+tags: [long_horizon, restart, subagent, recovery]
+grader:
+  type: filesystem
+  checks:
+    - path: /workspace/companies.csv
+      min_lines: 21

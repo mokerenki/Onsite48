@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Onsite48 Runtime — Pass Rate Trajectory</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; background: #0b0f14; color: #e6edf3; }
+  h1 { font-size: 1.4rem; }
+  .card { background: #161b22; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 0.4rem 0.75rem; border-bottom: 1px solid #30363d; }
+  .bar { height: 18px; background: #238636; border-radius: 3px; }
+  .note { color: #8b949e; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<h1>Onsite48 Runtime — Pass Rate over Commit History</h1>
+<p class="note">Generated from committed runner JSON. Live model numbers appear when credentials are available.</p>
+<div class="card">
+<table id="tbl"><thead><tr><th>Commit / milestone</th><th>Pass rate</th><th></th></tr></thead><tbody></tbody></table>
+</div>
+<script>
+const data = [{"commit": "baseline-legacy", "pass_rate": 0.268}, {"commit": "phase6-long-horizon", "pass_rate": 0.875}, {"commit": "phase6-lane-frontier", "pass_rate": 0.8}];
+const tbody = document.querySelector('#tbl tbody');
+data.forEach(d => {
+  const tr = document.createElement('tr');
+  const pct = (d.pass_rate * 100).toFixed(1);
+  tr.innerHTML = `<td>${d.commit}</td><td>${pct}%</td>
+    <td><div class="bar" style="width:${Math.max(4, d.pass_rate*100)}%"></div></td>`;
+  tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>

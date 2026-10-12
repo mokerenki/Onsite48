@@ -1,0 +1,25 @@
+{
+  "task_id": "del-pptx-inspect-001",
+  "status": "failed",
+  "sanitized": true,
+  "summary": "FAILED: lint_unfixed",
+  "failure_cause": "lint_unfixed",
+  "root_cause_analysis": "pptx produced but lint found missing title on slide 3; agent called finish without re-render. Root cause: deliverable verify path not blocking finish on open lint errors. Fix target: verifier + deliverable gate.",
+  "steps_excerpt": [
+    {
+      "step": 1,
+      "event": "model",
+      "note": "goal accepted"
+    },
+    {
+      "step": 5,
+      "event": "error",
+      "note": "lint_unfixed"
+    },
+    {
+      "step": -1,
+      "event": "finish",
+      "status": "failed"
+    }
+  ]
+}

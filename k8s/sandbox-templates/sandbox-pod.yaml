@@ -1,0 +1,58 @@
+# Sandbox pod template for agent computer sessions.
+# NetworkPolicy restricts egress to allow-listed hosts only.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sandbox-{{RUN_ID}}
+  namespace: onsite48-sandboxes
+  labels:
+    app: onsite48-sandbox
+    run_id: "{{RUN_ID}}"
+spec:
+  restartPolicy: Never
+  containers:
+    - name: sandbox
+      image: onsite48/sandbox:latest
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: "250m"
+          memory: "512Mi"
+        limits:
+          cpu: "2"
+          memory: "2Gi"
+      volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+      env:
+        - name: RUN_ID
+          value: "{{RUN_ID}}"
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+        runAsNonRoot: true
+        runAsUser: 1000
+  volumes:
+    - name: workspace
+      emptyDir: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-{{RUN_ID}}-net
+  namespace: onsite48-sandboxes
+spec:
+  podSelector:
+    matchLabels:
+      run_id: "{{RUN_ID}}"
+  policyTypes: ["Egress", "Ingress"]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+    # Allow-list additional egress via patches per connector need.

@@ -1,0 +1,12 @@
+id: gen-qa-002
+tier: general
+goal: Convert 72 F to C rounded.
+max_steps: 6
+max_cost_usd: 0.15
+grader:
+  type: exact_answer
+  expect:
+    value: '22'
+    numeric: true
+tags:
+- general

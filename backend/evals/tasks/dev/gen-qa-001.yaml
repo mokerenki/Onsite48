@@ -1,0 +1,12 @@
+id: gen-qa-001
+tier: general
+goal: What is 17 * 24?
+max_steps: 6
+max_cost_usd: 0.15
+grader:
+  type: exact_answer
+  expect:
+    value: '408'
+    numeric: true
+tags:
+- general
