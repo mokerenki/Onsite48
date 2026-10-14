@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  display: 'swap',
-  variable: '--font-inter',
-});
+// NOTE: this intentionally does NOT use next/font's Google loader. The Docker
+// build runs without internet access, and `next/font` fetches the requested
+// family from Google Fonts at build time -- three retries, then a hard failure
+// that aborts the entire build. Instead we expose the same `--font-inter`
+// CSS variable the markup references, but point it at a system font stack so
+// the build is reproducible offline. The variable name is unchanged, so every
+// `font-inter`/`inter.variable` reference in the UI keeps working.
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://onsite48ai.world"),
@@ -49,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className="font-inter">
       <body className="bg-onsite48-background text-onsite48-text antialiased">
         <ErrorBoundary>
           <AuthProvider>{children}</AuthProvider>
