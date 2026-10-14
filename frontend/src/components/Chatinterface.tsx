@@ -1763,28 +1763,56 @@ if (data.state) {
     const threadId = threadIdRef.current;
     if (!threadId) return;
 
+    // Set the pause flag FIRST, before touching the socket. The onclose
+    // handler returns early when this is true, which prevents the close from
+    // scheduling a reconnect that would spin up a fresh backend session for a
+    // task the user just cancelled. handlePause does the same thing; without
+    // it the stop button closes the socket, onclose sees isPausedRef==false,
+    // and reconnects -- leaving the task looking alive when the user returns.
+    isPausedRef.current = true;
+    acceptsTaskEventsRef.current = false;
+    clarificationPauseRef.current = false;
+
     setLoading(false);
     setCurrentStatus("cancelled");
     setErrorMessage("Task cancelled by user");
     setPendingConfirmation(null);
-    isPausedRef.current = false;
 
-    // Close WebSocket
+    // Close WebSocket. wsRef is cleared before close() so the onclose handler
+    // sees a stale socket and returns immediately, double-blocking reconnect.
     if (wsRef.current) {
-      wsRef.current.close();
+      const socket = wsRef.current;
       wsRef.current = null;
+      if (socket.readyState < WebSocket.CLOSING) {
+        socket.close(1000, "Task cancelled by user");
+      }
     }
     setIsConnected(false);
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
 
     // Remove from paused state if any
     try {
-      await fetch(`/api/tasks/${threadId}/cancel`, {
+      const response = await fetch(`/api/tasks/${threadId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
         body: JSON.stringify({}),
       });
+      if (!response.ok) {
+        // A 409 means the task was already terminal (the WebSocket disconnect
+        // cleaned it up first). That is still a successful stop from the
+        // user's perspective -- the task is no longer running.
+        const error = await response.json().catch(() => ({})) as { detail?: string };
+        if (response.status !== 409) {
+          throw new Error(error.detail || `Cancel failed with ${response.status}`);
+        }
+      }
     } catch (err) {
-      // Ignore errors on stop
+      // Don't leave the UI stuck on a spinner: the local state already says
+      // cancelled. Surface the failure so it is visible, not silently dropped.
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to cancel task on the server.');
     }
 
     setRecentTasks((previous) => {
