@@ -34,6 +34,23 @@ from app.runtime.verifier import (
     verify_completion,
 )
 from app.runtime.list_answer import prefer_list_answer
+from app.runtime.research_control import (
+    BranchResult,
+    EvidenceItem,
+    ResearchBranch,
+    apply_depth_budget_caps,
+    complexity_multiplier,
+    finish_gate_exhausted,
+    is_research_goal,
+    is_retrieval_tool,
+    merge_branch_results,
+    plan_research,
+    research_finish_blocked,
+    saturation_nudge_message,
+    verifier_evidence,
+    weighted_retrieval_count,
+    weighted_retrieval_increment,
+)
 
 logger = structlog.get_logger("onsite48.runtime.loop")
 
@@ -71,6 +88,21 @@ _LOOP_SAME_CALL_LIMIT_OVERRIDES: dict[str, int] = {
     "browser_act": 6,       # single page interactions can legitimately repeat
     "navigate": 5,
 }
+
+# ---------------------------------------------------------------------------
+# Phase 1 feature flags — both default to false; enable via env after validation.
+# ---------------------------------------------------------------------------
+ENABLE_PARALLEL_RESEARCH = _os.environ.get("ENABLE_PARALLEL_RESEARCH", "").lower() in ("1", "true", "yes")
+ENABLE_CONTEXT_SUMMARIZATION = _os.environ.get("ENABLE_CONTEXT_SUMMARIZATION", "").lower() in ("1", "true", "yes")
+ENABLE_STRUCTURED_TOOL_RESULTS = _os.environ.get("ENABLE_STRUCTURED_TOOL_RESULTS", "").lower() in ("1", "true", "yes")
+
+# Parallel research tunables
+PARALLEL_BRANCH_CONCURRENCY = _env_int("PARALLEL_BRANCH_CONCURRENCY", 3)
+MAX_PARALLEL_BRANCHES = _env_int("MAX_PARALLEL_BRANCHES", 5)
+
+# Context summarization tunables
+DEFAULT_SUMMARY_THRESHOLD = _env_int("CONTEXT_SUMMARY_THRESHOLD_TOKENS", 60_000)
+DEFAULT_MAX_TOKENS_PHASE1 = _env_int("CONTEXT_MAX_TOKENS", 80_000)
 
 
 def _default_finish_summary(state: Any, goal: str, key_results: list[dict[str, Any]]) -> str:
@@ -256,6 +288,182 @@ def _auth_needs_input_payload(
     }
 
 
+# ---------------------------------------------------------------------------
+# Phase 1: Context Window Management (sliding window + summarization)
+# ---------------------------------------------------------------------------
+
+
+def estimate_tokens(messages: list[dict[str, Any]]) -> int:
+    """Rough token estimate: 1 token ≈ 4 characters (rough but consistent)."""
+    total_chars = 0
+    for msg in messages:
+        for key in ("content", "summary", "question"):
+            v = msg.get(key)
+            if isinstance(v, str):
+                total_chars += len(v)
+        for key in ("tool_calls", "options"):
+            v = msg.get(key)
+            if isinstance(v, str):
+                total_chars += len(v)
+            elif isinstance(v, list):
+                total_chars += len(json.dumps(v, default=str))
+    return total_chars // 4
+
+
+def extract_summary(result: Any) -> str:
+    """Extract a 1-2 sentence summary from a tool result."""
+    if result is None:
+        return ""
+    if isinstance(result, str):
+        return result[:300]
+    if isinstance(result, dict):
+        for key in ("message", "summary", "output", "text"):
+            v = result.get(key)
+            if isinstance(v, str) and v.strip():
+                return v.strip()[:300]
+        for key in ("results", "items", "data", "hits"):
+            v = result.get(key)
+            if isinstance(v, list):
+                return f"Returned {len(v)} results."
+        if result.get("count") is not None:
+            return f"Count: {result['count']}."
+        if result.get("error") or result.get("error_code"):
+            return f"Error: {str(result.get('error', result.get('error_code', '')))[:200]}"
+        if result.get("ok") is True:
+            return "Operation completed successfully."
+    return str(result)[:300]
+
+
+def extract_urls(result: Any) -> list[str]:
+    """Extract URLs from a tool result for evidence tracking."""
+    urls: list[str] = []
+    if isinstance(result, dict):
+        for key in ("url", "href", "link", "source_url", "canonical_url"):
+            v = result.get(key)
+            if isinstance(v, str) and v.startswith("http"):
+                urls.append(v)
+        for key in ("results", "sources", "items", "hits", "data"):
+            v = result.get(key)
+            if isinstance(v, list):
+                for item in v:
+                    if isinstance(item, dict):
+                        for uk in ("url", "href", "link"):
+                            uv = item.get(uk)
+                            if isinstance(uv, str) and uv.startswith("http") and uv not in urls:
+                                urls.append(uv)
+    elif isinstance(result, str) and result.startswith("http"):
+        urls.append(result)
+    return urls
+
+
+class ContextManager:
+    """Sliding-window context management with LLM summarization.
+
+    After each model turn, if the estimated token count exceeds the summary
+    threshold, older messages are collapsed into a compact summary using a
+    fast (cheap) model. The most recent N turns are preserved verbatim.
+    """
+
+    def __init__(
+        self,
+        max_tokens: int = DEFAULT_MAX_TOKENS_PHASE1,
+        summary_threshold: int = DEFAULT_SUMMARY_THRESHOLD,
+        summarizer_model: str = "fast",
+        recent_turns: int = 6,
+    ):
+        self.max_tokens = max_tokens
+        self.summary_threshold = summary_threshold
+        self.summarizer_model = summarizer_model
+        self.recent_turns = recent_turns
+        self._summarizer_prompt = (
+            "Summarize the following conversation turns concisely. Preserve all"
+            " key facts, decisions, tool results, URLs, and entity names."
+            " Output only the summary text, no markdown headers."
+        )
+
+    async def maybe_summarize(self, state: Any) -> Any:
+        """Check token count and summarize if over threshold. Mutates and returns state."""
+        if not ENABLE_CONTEXT_SUMMARIZATION:
+            return state
+
+        messages = state.messages or []
+        token_count = getattr(state, "token_count", 0) or 0
+        estimated = estimate_tokens(messages)
+        effective_tokens = max(token_count, estimated)
+
+        # Also consider raw message count as a proxy
+        if effective_tokens < self.summary_threshold and len(messages) < self.recent_turns * 3:
+            return state
+
+        # Partition: system messages stay, recent turn-pair window stays, older gets summarized
+        system_msgs = [m for m in messages if m.get("role") == "system"]
+        non_system = [m for m in messages if m.get("role") != "system"]
+
+        if len(non_system) <= self.recent_turns:
+            # Not enough older content to summarize — fall back to token-based check
+            if effective_tokens < self.summary_threshold:
+                return state
+
+        recent = non_system[-self.recent_turns:] if len(non_system) > self.recent_turns else non_system[:]
+        older = non_system[: max(0, len(non_system) - self.recent_turns)] if len(non_system) > self.recent_turns else []
+
+        if not older:
+            # Even if over threshold, nothing to summarize
+            return state
+
+        # Summarize older turns
+        summary = await self._summarize_early_turns(older)
+
+        new_messages = [
+            *system_msgs,
+            {"role": "system", "content": f"[Context summary: {summary}]"},
+            *recent,
+        ]
+
+        state.messages = new_messages
+        state.token_count = estimate_tokens(new_messages)
+        state.summarized_turns = getattr(state, "summarized_turns", 0) + len(older)
+        return state
+
+    async def _summarize_early_turns(self, messages: list[dict[str, Any]]) -> str:
+        """Use a fast/cheap model to summarize older conversation turns."""
+        if not messages:
+            return ""
+
+        # Build a compact conversation for the summarizer
+        content_parts = []
+        for msg in messages:
+            role = msg.get("role", "")
+            text = msg.get("content", "")
+            if isinstance(text, str) and text.strip():
+                content_parts.append(f"[{role}] {text.strip()[:500]}")
+            elif text:
+                content_parts.append(f"[{role}] {str(text)[:500]}")
+
+        prompt_text = "\n".join(content_parts[:50])  # cap input to summarizer
+
+        summ_messages = [
+            {"role": "system", "content": self._summarizer_prompt},
+            {"role": "user", "content": prompt_text},
+        ]
+
+        try:
+            result = await model_complete(
+                summ_messages,
+                tools=[],
+                role="summarizer",
+                tool_choice="none",
+                temperature=0.1,
+                max_tokens=512,
+                model=self.summarizer_model,
+            )
+            return (result.content or "").strip()[:1000]
+        except Exception:
+            # Graceful fallback: naive truncation summary
+            combined = " ".join(content_parts[:20])
+            return combined[:500] if combined else "No prior context to summarize."
+
+
 def _terminal_return(
     status: str,
     result: Any,
@@ -358,6 +566,396 @@ async def _run_readback(
             {"tool": spec.name, **rb},
         )
         return rb
+
+
+# ---------------------------------------------------------------------------
+# Phase 1: Parallel research branch execution
+# ---------------------------------------------------------------------------
+
+
+async def _run_research_branch(
+    branch: ResearchBranch,
+    goal: str,
+    specs: dict[str, ToolSpec],
+    journal: Journal,
+    run_id: str,
+    *,
+    model_override: str | None = None,
+    event_emitter: Any = None,
+    cancel_event: asyncio.Event | None = None,
+    max_steps: int = 30,
+    max_tokens: int = 60_000,
+    max_cost_usd: float = 2.0,
+    max_wall_s: float = 240.0,
+) -> BranchResult:
+    """Run a single research facet branch in isolation.
+
+    Creates a sub-state with a facet-specific goal, runs a mini research loop
+    (search → open → extract), and returns a BranchResult.
+    """
+    branch_run_id = f"{run_id}_branch_{branch.id}"
+    branch_goal = (
+        f"Research facet: {branch.facet}\n"
+        f"Main goal: {goal}\n"
+        f"Search queries to use: {json.dumps(branch.queries)}\n"
+        f"Minimum sources required: {branch.min_sources}\n"
+        "Gather evidence (URLs, titles, content snippets) for this facet."
+        " Use web_search and open_page tools. When you have at least"
+        f" {branch.min_sources} sources, call finish with a 2-3 sentence summary"
+        " of findings and your evidence_refs."
+    )
+
+    # Use SpawnManager to run the branch as an isolated worker
+    from app.runtime.spawn import SpawnManager
+    from app.runtime.roles_v2 import RESEARCHER
+
+    cancel_event = cancel_event or asyncio.Event()
+
+    spawn_mgr = SpawnManager(
+        parent_run_id=run_id,
+        parent_role=RESEARCHER,
+        workspace_root=Path(os.environ.get("AGENT_WORKSPACE", f"/tmp/onsite48_workspace/{run_id}")),
+        loop_runner=None,  # We'll run inline instead
+        journal=journal,
+        depth=1,
+        cancel_event=cancel_event,
+    )
+
+    # Run the branch using the parent loop runner (recursion into run())
+    branch_result = await run(
+        run_id=branch_run_id,
+        goal=branch_goal,
+        role_config={
+            "name": "researcher",
+            "system_prompt_file": "researcher_v2.txt",
+            "tool_allowlist": RESEARCHER.tool_allowlist,
+            "model_lane": "default",
+            "budget": {"steps": max_steps, "tokens": max_tokens, "cost_usd": max_cost_usd, "wall_s": max_wall_s},
+            "may_spawn": False,
+            "depth_cap": 1,
+            "max_summary_tokens": 800,
+        },
+        workspace=str(Path(os.environ.get("AGENT_WORKSPACE", f"/tmp/onsite48_workspace/{run_id}")) / "branches" / branch.id),
+        journal=journal,
+        model_override=model_override,
+        max_steps=max_steps,
+        max_tokens=max_tokens,
+        max_cost_usd=max_cost_usd,
+        max_wall_s=max_wall_s,
+        parent_run_id=run_id,
+        cancel_event=cancel_event,
+    )
+
+    # Extract evidence from the branch result
+    evidence_items: list[EvidenceItem] = []
+    sources: list[str] = []
+    retrieval_count = 0
+
+    # Pull evidence from the journal events for this branch
+    try:
+        branch_events = await journal.list_events(branch_run_id)
+    except Exception:
+        branch_events = []
+
+    for ev in branch_events:
+        et = ev.get("type") or ev.get("event_type") or ""
+        payload = ev.get("payload") if isinstance(ev.get("payload"), dict) else {}
+        if et == "tool_call_result":
+            r = payload.get("result", {})
+            if isinstance(r, dict):
+                if is_retrieval_tool(str(payload.get("name") or "")):
+                    retrieval_count += 1
+                    urls = extract_urls(r)
+                    for url in urls:
+                        if url not in sources:
+                            sources.append(url)
+                    title = str(r.get("title") or r.get("query") or "")[:200]
+                    content = extract_summary(r)
+                    if urls:
+                        for url in urls:
+                            evidence_items.append(EvidenceItem(
+                                url=url,
+                                title=title or f"Search result for {branch.facet}",
+                                content=content or "",
+                                relevance=branch.facet,
+                            ))
+                    elif content:
+                        evidence_items.append(EvidenceItem(
+                            url="",
+                            title=title or f"{branch.facet} evidence",
+                            content=content,
+                            relevance=branch.facet,
+                        ))
+
+    # Extract summary from finish payload
+    finish_payload = {}
+    for ev in branch_events:
+        et = ev.get("type") or ev.get("event_type") or ""
+        payload = ev.get("payload") if isinstance(ev.get("payload"), dict) else {}
+        if et == "run_finished":
+            finish_payload = payload
+            break
+
+    summary = finish_payload.get("summary", "") or branch_result.get("result", {}).get("summary", "")
+
+    status = branch_result.get("status", "failed")
+    if status not in ("completed", "completed_unverified", "partial"):
+        status = "failed"
+
+    return BranchResult(
+        branch_id=branch.id,
+        facet=branch.facet,
+        evidence=evidence_items,
+        summary=str(summary)[:1000],
+        sources=sources,
+        retrieval_count=retrieval_count,
+        status=status,  # type: ignore
+    )
+
+
+async def run_research_branches_parallel(
+    state: Any,
+    branches: list[ResearchBranch],
+    specs: dict[str, ToolSpec],
+    journal: Journal,
+    run_id: str,
+    *,
+    model_override: str | None = None,
+    event_emitter: Any = None,
+    cancel_event: asyncio.Event | None = None,
+    branch_runner: Any = None,
+) -> list[BranchResult]:
+    """Run research branches concurrently with a semaphore limit.
+
+    Each branch gets an isolated sub-run with a facet-specific goal.
+    Returns BranchResults in the same order as branches.
+    """
+    if not branches:
+        return []
+
+    # Sort by priority (higher first) but keep original order for result mapping
+    sorted_branches = sorted(branches, key=lambda b: getattr(b, "priority", 0), reverse=True)
+    sem = asyncio.Semaphore(PARALLEL_BRANCH_CONCURRENCY)
+
+    async def _guarded(branch: ResearchBranch) -> BranchResult:
+        async with sem:
+            if cancel_event and cancel_event.is_set():
+                return BranchResult(
+                    branch_id=branch.id,
+                    facet=branch.facet,
+                    evidence=[],
+                    summary="",
+                    sources=[],
+                    retrieval_count=0,
+                    status="failed",
+                )
+            # Emit parallel start event
+            await _emit_live_event(event_emitter, {
+                "type": "branch_started",
+                "content": {
+                    "branch_id": branch.id,
+                    "facet": branch.facet,
+                    "queries": branch.queries,
+                },
+                "transient": True,
+            })
+            try:
+                runner = branch_runner or _run_research_branch
+                result = await runner(
+                    branch=branch,
+                    goal=getattr(state, "goal", ""),
+                    specs=specs,
+                    journal=journal,
+                    run_id=run_id,
+                    model_override=model_override,
+                    event_emitter=event_emitter,
+                    cancel_event=cancel_event,
+                )
+            except Exception as exc:
+                logger.exception("runtime.branch_failed", branch_id=branch.id, error=str(exc))
+                result = BranchResult(
+                    branch_id=branch.id,
+                    facet=branch.facet,
+                    evidence=[],
+                    summary=f"Branch failed: {exc}",
+                    sources=[],
+                    retrieval_count=0,
+                    status="failed",
+                )
+            await _emit_live_event(event_emitter, {
+                "type": "branch_completed",
+                "content": {
+                    "branch_id": branch.id,
+                    "facet": branch.facet,
+                    "status": result.status,
+                    "retrievals": result.retrieval_count,
+                    "sources": len(result.sources),
+                },
+                "transient": True,
+            })
+            return result
+
+    # Run all branches concurrently (semaphore limits actual concurrency)
+    tasks = [asyncio.ensure_future(_guarded(b)) for b in sorted_branches]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Map back to original branch order
+    result_by_id: dict[str, BranchResult] = {}
+    for r in results:
+        if isinstance(r, BranchResult):
+            result_by_id[r.branch_id] = r
+
+    return [result_by_id.get(b.id, BranchResult(
+        branch_id=b.id, facet=b.facet, evidence=[],
+        summary="", sources=[], retrieval_count=0, status="failed",
+    )) for b in branches]
+
+
+def synthesize_branches(
+    state: Any,
+    branch_results: list[BranchResult],
+    *,
+    goal: str = "",
+) -> Any:
+    """Merge branch results into the run state as a synthesis message."""
+    synthesis = merge_branch_results(branch_results)
+    state.synthesis = synthesis
+
+    # Add synthesis as a system-level context message
+    synthesis_msg = {
+        "role": "system",
+        "content": (
+            f"[Parallel research synthesis]\n"
+            f"{synthesis.executive_summary}\n\n"
+            f"Total sources: {synthesis.total_sources}\n"
+            f"Facets: {list(synthesis.by_facet.keys())}\n"
+            f"Evidence items: {len(synthesis.merged_evidence)}\n"
+            "Use this synthesis as the factual basis for your final answer."
+        ),
+    }
+    state.messages.append(synthesis_msg)
+
+    # Update retrieval count
+    total_retrievals = sum(br.retrieval_count for br in branch_results)
+    if hasattr(state, "token_count"):
+        state.token_count += estimate_tokens([synthesis_msg])
+
+    return state
+
+
+async def _run_research_branch_compact(
+    branch: ResearchBranch,
+    goal: str,
+    specs: dict[str, ToolSpec],
+    journal: Journal,
+    run_id: str,
+    *,
+    model_override: str | None = None,
+    event_emitter: Any = None,
+    cancel_event: asyncio.Event | None = None,
+    max_steps: int = 30,
+    max_tokens: int = 60_000,
+    max_cost_usd: float = 2.0,
+    max_wall_s: float = 240.0,
+) -> BranchResult:
+    """Lightweight research branch runner for testing without full worker recursion."""
+    # This is a fallback path that does minimal research without spawning a full sub-loop.
+    # Used when the full run() recursion is not available (e.g., in tests).
+    branch_run_id = f"{run_id}_branch_{branch.id}"
+    evidence_items: list[EvidenceItem] = []
+    sources: list[str] = []
+    retrieval_count = 0
+
+    for query in branch.queries:
+        if cancel_event and cancel_event.is_set():
+            break
+
+        # Try web_search tool
+        search_spec = specs.get("web_search") or specs.get("search") or specs.get("tavily_search")
+        if search_spec and search_spec._execute is not None:
+            try:
+                await j_append_safe(journal, branch_run_id, "tool_call_started",
+                                    {"call_id": f"bc_{uuid.uuid4().hex[:8]}", "name": "web_search", "arguments": {"query": query}})
+                result = await asyncio.wait_for(search_spec._execute(query=query), timeout=30.0)
+                retrieval_count += 1
+                urls = extract_urls(result)
+                for url in urls:
+                    if url not in sources:
+                        sources.append(url)
+                content = extract_summary(result)
+                for url in urls:
+                    evidence_items.append(EvidenceItem(
+                        url=url, title=f"Search: {query}", content=content, relevance=branch.facet,
+                    ))
+                await j_append_safe(journal, branch_run_id, "tool_call_result",
+                                    {"call_id": f"bc_{uuid.uuid4().hex[:8]}", "name": "web_search", "result": result})
+
+                # Try to open top results
+                open_spec = specs.get("open_page") or specs.get("browser_navigate")
+                if open_spec and open_spec._execute is not None and urls:
+                    top_url = urls[0]
+                    try:
+                        page_result = await asyncio.wait_for(open_spec._execute(url=top_url), timeout=30.0)
+                        page_content = extract_summary(page_result)
+                        if page_content:
+                            evidence_items.append(EvidenceItem(
+                                url=top_url, title=query, content=page_content[:300], relevance=branch.facet,
+                            ))
+                    except Exception:
+                        pass
+            except Exception as exc:
+                logger.debug("runtime.branch_search_failed", branch_id=branch.id, error=str(exc))
+
+    # Generate summary
+    summary_parts = [ev.content for ev in evidence_items[:3] if ev.content]
+    summary = " ".join(summary_parts)[:500] if summary_parts else f"Collected {len(evidence_items)} evidence items for {branch.facet}."
+
+    status = "completed" if retrieval_count >= branch.min_sources else ("partial" if retrieval_count > 0 else "failed")
+
+    return BranchResult(
+        branch_id=branch.id,
+        facet=branch.facet,
+        evidence=evidence_items,
+        summary=summary,
+        sources=sources,
+        retrieval_count=retrieval_count,
+        status=status,  # type: ignore
+    )
+
+
+async def j_append_safe(journal: Journal, run_id: str, event_type: str, payload: dict[str, Any]) -> None:
+    """Safe journal append that never raises."""
+    try:
+        await journal.append(run_id, event_type, payload)
+    except Exception:
+        pass
+
+
+async def _run_research_branch_simulated(
+    branch: ResearchBranch,
+    goal: str,
+    specs: dict[str, ToolSpec],
+    journal: Journal,
+    run_id: str,
+    *,
+    model_override: str | None = None,
+    event_emitter: Any = None,
+    cancel_event: asyncio.Event | None = None,
+    max_steps: int = 30,
+    max_tokens: int = 60_000,
+    max_cost_usd: float = 2.0,
+    max_wall_s: float = 240.0,
+) -> BranchResult:
+    """Simulated research branch for environments without search tools."""
+    return BranchResult(
+        branch_id=branch.id,
+        facet=branch.facet,
+        evidence=[],
+        summary=f"Simulated research for facet: {branch.facet}. Queries: {branch.queries}.",
+        sources=[],
+        retrieval_count=1,
+        status="failed",
+    )
 
 
 async def run(
@@ -512,6 +1110,13 @@ async def run(
         journal=j,
     )
 
+    # Phase 1: Context window manager for sliding-window summarization
+    context_manager = ContextManager(
+        max_tokens=DEFAULT_MAX_TOKENS_PHASE1,
+        summary_threshold=DEFAULT_SUMMARY_THRESHOLD,
+        summarizer_model="fast",
+    )
+
     _rb = role_config.get("budget") or {}
 
     # Capture caller-explicitness BEFORE resolution.
@@ -534,24 +1139,26 @@ async def run(
         max_wall_s if _explicit["wall"] else role_config.get("max_wall_s") or _rb.get("wall_s") or DEFAULT_MAX_WALL_S
     )
 
-    # Adaptive scaling for complex goals (explicit caller budgets and role
-    # configs are left untouched; only DEFAULT_* fallbacks scale).
-    _goal_l = (goal or getattr(state, "goal", "") or "").lower()
-    _complexity_hits = sum(
-        1 for k in (
-            " and ", "report", "website", "deck", "spreadsheet", "analyze",
-            "compare", "research", "build", "each of", "all of", "multi",
-        ) if k in _goal_l
-    )
-    if _complexity_hits >= 4:
-        _mult = 2.0
-    elif _complexity_hits >= 2:
-        _mult = 1.5
-    else:
-        _mult = 1.0
+    # Adaptive scaling for complex multi-deliverable goals only.
+    # Pure "research X" no longer doubles budgets; depth caps apply below.
+    _goal_for_budget = goal or getattr(state, "goal", "") or ""
+    _mult = complexity_multiplier(_goal_for_budget)
     if _mult > 1.0 and not _explicit["steps"] and not role_config.get("max_steps") and not _rb.get("steps"):
         max_steps = min(int(max_steps * _mult), DEFAULT_MAX_STEPS * 2)
         max_wall = min(max_wall * _mult, DEFAULT_MAX_WALL_S * 2)
+
+    # Research depth mode: quick | standard | deep caps (P1 product control).
+    _explicit_depth = None
+    if isinstance(role_config, dict):
+        _explicit_depth = role_config.get("research_depth") or (role_config.get("budget") or {}).get("research_depth")
+    max_steps, max_wall, _research_plan = apply_depth_budget_caps(
+        max_steps=max_steps,
+        max_wall=max_wall,
+        goal=_goal_for_budget,
+        explicit_depth=_explicit_depth,
+        explicit_steps=_explicit["steps"] or bool(role_config.get("max_steps") or _rb.get("steps")),
+        explicit_wall=_explicit["wall"] or bool(role_config.get("max_wall_s") or _rb.get("wall_s")),
+    )
 
     # Worker budget floor: ensure workers (parent_run_id set) never receive less
     # than the research minimums unless explicitly configured.
@@ -562,10 +1169,7 @@ async def run(
 
     # Fail fast when the goal looks like research but no search/browse tool exists.
     _goal_l = (goal or getattr(state, "goal", None) or "").lower()
-    _researchy = any(
-        k in _goal_l
-        for k in ("research", "look up", "search for", "find the top", "who are the", "list the top")
-    )
+    _researchy = is_research_goal(goal or getattr(state, "goal", None) or "")
     _search_tools = {
         n for n in specs
         if any(x in n.lower() for x in ("search", "web_", "browser_", "brave", "tavily", "http_get", "fetch"))
@@ -645,10 +1249,35 @@ async def run(
     last_progress_sig: str | None = None
     empty_response_nudges = 0
     finish_attempts = 0
+    research_saturation_nudged = False
+    _run_research_plan = plan_research(
+        goal or getattr(state, "goal", "") or "",
+        explicit_depth=(role_config or {}).get("research_depth") if isinstance(role_config, dict) else None,
+    )
+
     auth_refresh_attempted: set[str] = set()
     untrusted_values: list[str] = list(getattr(state, "untrusted_values", None) or [])
     readbacks_ledger: list[dict[str, Any]] = []
     key_results: list[dict[str, Any]] = []
+    _retrieval_count = weighted_retrieval_count(key_results)
+    if _run_research_plan.is_research:
+        await j.append(
+            run_id,
+            "research_plan",
+            {
+                "depth": _run_research_plan.depth,
+                "label": _run_research_plan.label,
+                "min_retrievals_before_finish": _run_research_plan.min_retrievals_before_finish,
+                "saturation_retrievals": _run_research_plan.saturation_retrievals,
+                "max_steps": max_steps,
+                "max_wall_s": max_wall,
+                "branch_count": len(_run_research_plan.branches),
+            },
+        )
+
+    # Phase 1: Parallel research branch execution — runs once at loop entry
+    _parallel_branches_done = False
+
     # Live plan tracking: every executed tool call becomes one step the
     # client watches appear and fill in as the run progresses.
     live_plan_steps: list[dict[str, Any]] = []
@@ -656,6 +1285,8 @@ async def run(
 
     if not state.messages:
         await j.append(run_id, "run_started", {"goal": goal, "role_config": role_config})
+
+    logger.info("run.start", run_id=run_id, goal=(goal or "")[:120])
 
     while True:
         # Budget gates
@@ -702,6 +1333,102 @@ async def run(
             }
             await j.append(run_id, "run_finished", finish_payload)
             return _terminal_return("partial", finish_payload, state, run_id=run_id, specs=specs)
+
+        # Phase 1: Parallel research branch execution (runs once per run)
+        if (
+            not _parallel_branches_done
+            and ENABLE_PARALLEL_RESEARCH
+            and _run_research_plan.is_research
+            and _run_research_plan.branches
+            and not parent_run_id  # only at the lead level
+        ):
+            _parallel_branches_done = True
+            _branches = _run_research_plan.branches
+            logger.info(
+                "runtime.parallel_branches_entering",
+                run_id=run_id,
+                branch_count=len(_branches),
+                facets=[b.facet for b in _branches],
+            )
+            await _emit_live_event(event_emitter, {
+                "type": "parallel_branches_started",
+                "content": {
+                    "branch_count": len(_branches),
+                    "branches": [{"id": b.id, "facet": b.facet, "priority": b.priority} for b in _branches],
+                },
+                "transient": True,
+            })
+            try:
+                branch_results = await run_research_branches_parallel(
+                    state=state,
+                    branches=_branches,
+                    specs=specs,
+                    journal=j,
+                    run_id=run_id,
+                    model_override=model_override,
+                    event_emitter=event_emitter,
+                    cancel_event=cancel_event,
+                )
+                for br in branch_results:
+                    await j.append(
+                        run_id,
+                        "branch_result",
+                        {
+                            "branch_id": br.branch_id,
+                            "facet": br.facet,
+                            "status": br.status,
+                            "retrieval_count": br.retrieval_count,
+                            "sources": br.sources,
+                            "summary": br.summary,
+                        },
+                    )
+                state = synthesize_branches(state, branch_results, goal=goal or getattr(state, "goal", ""))
+                await j.append(
+                    run_id,
+                    "synthesis_result",
+                    {
+                        "executive_summary": getattr(state, "synthesis", None) and state.synthesis.executive_summary,
+                        "total_sources": getattr(state, "synthesis", None) and state.synthesis.total_sources,
+                        "facets": list(getattr(state, "synthesis", None).by_facet.keys()) if getattr(state, "synthesis", None) else [],
+                    },
+                )
+                # Add branch retrievals to the count
+                for br in branch_results:
+                    _retrieval_count += br.retrieval_count
+                    # Add branch evidence to key_results for verifier
+                    for ev in br.evidence:
+                        key_results.append({
+                            "tool": "web_search",
+                            "call_id": f"branch_{br.branch_id}",
+                            "result": {"url": ev.url, "title": ev.title, "content": ev.content[:500]},
+                            "result_summary": ev.content[:300],
+                            "evidence_ref": ev.url,
+                        })
+                await j.append(
+                    run_id,
+                    "nudge",
+                    {"reason": "parallel_research_complete", "branches": len(_branches)},
+                )
+                # Emit progress with parallel retrieval count
+                await _emit_live_event(event_emitter, {
+                    "type": "run_progress", "transient": True,
+                    "content": {
+                        "retrievals": _retrieval_count,
+                        "steps": state.step_count,
+                        "depth": _run_research_plan.depth,
+                        "finish_attempts": finish_attempts,
+                        "parallel_branches": len(_branches),
+                    },
+                })
+                continue  # Skip normal single-branch flow; model sees synthesis
+            except Exception as exc:
+                logger.exception("runtime.parallel_branches_failed", run_id=run_id, error=str(exc))
+                await _emit_live_event(event_emitter, {
+                    "type": "parallel_branches_failed",
+                    "content": {"error": str(exc)},
+                    "transient": True,
+                })
+                # Fall through to normal single-branch flow
 
         messages = context.build(state, specs)
         tool_schemas = specs_for_model(specs)
@@ -818,25 +1545,82 @@ async def run(
             "cost_metrics": {"total_cost_usd": round(float(state.cost_usd or 0), 6)},
             "transient": True,
         })
+        await _emit_live_event(event_emitter, {
+            "type": "run_progress", "transient": True,
+            "content": {
+                "retrievals": _retrieval_count,
+                "steps": state.step_count,
+                "depth": getattr(locals().get("_run_research_plan"), "depth", None),
+                "finish_attempts": finish_attempts,
+            },
+        })
+
+        # Phase 1: Context window management — summarize after each model turn
+        if ENABLE_CONTEXT_SUMMARIZATION:
+            state = await context_manager.maybe_summarize(state)
+            if getattr(state, "summarized_turns", 0) > 0:
+                await j.append(
+                    run_id,
+                    "context_summarized",
+                    {
+                        "summarized_turns": state.summarized_turns,
+                        "token_count": state.token_count,
+                        "max_tokens": context_manager.max_tokens,
+                    },
+                )
 
         if not response.tool_calls:
             empty_response_nudges += 1
-            if empty_response_nudges == 1 and response.content:
-                state.messages.append(
-                    {
-                        "role": "user",
-                        "content": (
-                            "If the goal is complete, call the finish tool with summary and status. "
-                            "Otherwise call a tool or ask_user."
-                        ),
-                    }
-                )
-                await j.append(run_id, "nudge", {"reason": "no_tool_calls"})
-                continue
+            _goal_now = state.goal or goal or ""
+            _research_now = is_research_goal(_goal_now)
+            _retrievals = _retrieval_count
+            if empty_response_nudges == 1:
+                if _research_now and _retrievals < (_run_research_plan.min_retrievals_before_finish or 1):
+                    state.messages.append(
+                        {
+                            "role": "user",
+                            "content": (
+                                "This is a research goal. Do not answer from memory alone. "
+                                "Call web_search or open_page to gather sources, then synthesize and finish "
+                                "with evidence_refs. A prose-only answer without retrieval is not acceptable."
+                            ),
+                        }
+                    )
+                    await j.append(run_id, "nudge", {"reason": "research_requires_retrieval", "retrievals": _retrievals})
+                    continue
+                if response.content:
+                    state.messages.append(
+                        {
+                            "role": "user",
+                            "content": (
+                                "If the goal is complete, call the finish tool with summary and status. "
+                                "Otherwise call a tool or ask_user."
+                            ),
+                        }
+                    )
+                    await j.append(run_id, "nudge", {"reason": "no_tool_calls"})
+                    continue
+            # Second+ empty tool-call turn
+            if _research_now and _retrievals < (_run_research_plan.min_retrievals_before_finish or 1):
+                finish_payload = {
+                    "summary": (
+                        "Research did not run: the model produced an answer without using "
+                        "search or page tools. Please send the request again, or rephrase "
+                        "as an explicit research task."
+                    ),
+                    "status": "failed",
+                    "evidence_refs": [],
+                    "error_code": "research_no_retrieval",
+                    "retryable": True,
+                    "stop_reason": "no_tool_calls_research",
+                }
+                await j.append(run_id, "run_finished", finish_payload)
+                return _terminal_return("failed", finish_payload, state, run_id=run_id, specs=specs)
             finish_payload = {
                 "summary": response.content or "Agent stopped without calling finish.",
                 "status": "partial",
                 "evidence_refs": [],
+                "stop_reason": "no_tool_calls",
             }
             await j.append(run_id, "run_finished", finish_payload)
             return _terminal_return("partial", finish_payload, state, run_id=run_id, specs=specs)
@@ -968,6 +1752,50 @@ async def run(
                     "waiting_approval", finish_payload, state, run_id=run_id, specs=specs
                 )
 
+            # ----- Phase 4: Learning from Corrections (Qdrant-backed) -----
+            # Before executing, probe the correction store for semantically
+            # similar past corrections and surface them as a hint in the journal.
+            # This is non-blocking: memory unavailability degrades gracefully.
+            try:
+                from app.services.correction_store import correction_store
+                _org_id = (role_config or {}).get("org_id") or tenant_id or "default"
+                _user_id = role_config.get("user_id") or user_id or "default"
+                _thread_id = str(role_config.get("thread_id") or thread_id or run_id)
+                # Only probe for tools that have meaningful arguments and are not loop/control tools
+                if name not in ("finish", "ask_user", "reset_prompt", "request_user_auth") and args:
+                    _suggestion = await correction_store.suggest_correction(
+                        organization_id=str(_org_id),
+                        user_id=str(_user_id),
+                        tool_name=name,
+                        tool_args=args if isinstance(args, dict) else {"value": str(args)},
+                        goal=state.goal or goal,
+                        thread_id=_thread_id if thread_id else None,
+                    )
+                    if _suggestion is not None:
+                        await j_append_safe(
+                            j, run_id, "correction_suggestion", {
+                                "call_id": call_id,
+                                "name": name,
+                                "score": _suggestion.get("score", 0.0),
+                                "correction_type": _suggestion.get("correction_type", ""),
+                                "corrected_args": _suggestion.get("corrected_args", {}),
+                                "user_feedback": _suggestion.get("user_feedback", ""),
+                            }
+                        )
+                        # Surface as a system hint in the conversation
+                        _hint = _suggestion.get("user_feedback") or _suggestion.get("corrected_args", {})
+                        if _hint:
+                            state.messages.append({
+                                "role": "user",
+                                "content": (
+                                    f"[Learning hint from past correction] "
+                                    f"A similar {name} call was corrected before. "
+                                    f"Suggestion: {_hint if isinstance(_hint, str) else json.dumps(_hint)[:500]}"
+                                ),
+                            })
+            except Exception as _cs_exc:
+                logger.debug("loop.correction_probe_skipped", error=str(_cs_exc)[:120])
+
             # ----- spawn / wide_map (Phase 5) -----
             if name in ("spawn_agent", "spawn_agents", "await_agents", "wide_map"):
                 await j.append(
@@ -1067,6 +1895,7 @@ async def run(
                     {"call_id": call_id, "name": name, "result": result, "message": msg},
                 )
                 key_results.append({"tool": name, "result": result})
+                _retrieval_count += weighted_retrieval_increment(name, result)
                 continue
 
             # ----- resource locks for mutating tools -----
@@ -1111,8 +1940,66 @@ async def run(
                     {"call_id": call_id, "name": name, "arguments": args},
                 )
 
-                # Independent verifier (except when already a non-success honest state)
-                if finish_status in ("completed", "partial", "completed_unverified"):
+                # Research evidence gate: block premature success finishes.
+                if finish_status in ("completed", "completed_unverified", "partial"):
+                    _block = research_finish_blocked(
+                        state.goal or goal or "",
+                        key_results,
+                        explicit_depth=(role_config or {}).get("research_depth")
+                        if isinstance(role_config, dict)
+                        else None,
+                        retrieval_count=_retrieval_count,
+                    )
+                    if _block:
+                        if finish_gate_exhausted(finish_attempts, _retrieval_count, _run_research_plan.min_retrievals_before_finish):
+                            finish_payload = {
+                                "summary": "Research did not run: the model tried to finish without "
+                                           "using retrieval tools. Please send the request again.",
+                                "status": "failed",
+                                "evidence_refs": [],
+                                "error_code": "research_no_retrieval",
+                                "retryable": True,
+                                "stop_reason": "finish_gate_exhausted",
+                            }
+                            await j.append(run_id, "run_finished", finish_payload)
+                            return _terminal_return("failed", finish_payload, state, run_id=run_id, specs=specs)
+                        state.messages.append(
+                            {
+                                "role": "user",
+                                "content": (
+                                    f"finish was rejected: {_block} "
+                                    "Continue with retrieval tools, then call finish again."
+                                ),
+                            }
+                        )
+                        await j.append(
+                            run_id,
+                            "tool_call_result",
+                            {
+                                "call_id": call_id,
+                                "name": name,
+                                "result": {
+                                    "rejected": True,
+                                    "reason": _block,
+                                    "retrievals": _retrieval_count,
+                                },
+                            },
+                        )
+                        await j.append(
+                            run_id,
+                            "nudge",
+                            {
+                                "reason": "research_finish_blocked",
+                                "retrievals": _retrieval_count,
+                            },
+                        )
+                        continue
+
+                # Independent verifier (except when already a non-success honest state).
+                # completed_unverified is the agent's own honest declaration
+                # of partial evidence — trust it and skip the verifier
+                # round-trip (and its retry) for research-style finishes.
+                if finish_status in ("completed", "partial"):
                     # Collect journal events for evidence
                     journal_events = []
                     try:
@@ -1129,7 +2016,7 @@ async def run(
                         finish_status=finish_status,
                         journal_events=journal_events,
                         readbacks=readbacks_ledger,
-                        key_results=key_results[-20:],
+                        key_results=verifier_evidence(key_results),
                         model_override=model_override,
                     )
                     terminal = apply_verdict_to_terminal(
@@ -1137,6 +2024,8 @@ async def run(
                         verdict,
                         finish_summary,
                         finish_attempts=finish_attempts,
+                        goal=state.goal or goal,
+                        key_results=verifier_evidence(key_results),
                     )
                     if terminal["status"] == "_retry_finish":
                         # Feed unmet requirements back to the model
@@ -1541,6 +2430,7 @@ async def run(
                     {
                         "tool": name,
                         "call_id": call_id,
+                        "result": result if isinstance(result, dict) else {"value": str(result)[:1000]},
                         "result_summary": str(result)[:1000]
                         if not isinstance(result, dict)
                         else {
@@ -1550,6 +2440,30 @@ async def run(
                         },
                     }
                 )
+                _retrieval_count += weighted_retrieval_increment(name, result)
+                # Evidence saturation nudge (research depth control)
+                if is_retrieval_tool(name) and not research_saturation_nudged:
+                    _sat = saturation_nudge_message(
+                        state.goal or goal or "",
+                        key_results,
+                        already_nudged=research_saturation_nudged,
+                        explicit_depth=(role_config or {}).get("research_depth")
+                        if isinstance(role_config, dict)
+                        else None,
+                        retrieval_count=_retrieval_count,
+                    )
+                    if _sat:
+                        research_saturation_nudged = True
+                        state.messages.append({"role": "user", "content": _sat})
+                        await j.append(
+                            run_id,
+                            "nudge",
+                            {
+                                "reason": "research_saturation",
+                                "retrievals": _retrieval_count,
+                                "depth": _run_research_plan.depth,
+                            },
+                        )
 
             if name == "file_write" and str(args.get("path") or "").endswith("todo.md"):
                 state.todo_md = str(args.get("content") or "")[:8000]
@@ -1557,6 +2471,29 @@ async def run(
             msg = context.format_tool_result(
                 call_id=call_id, name=name, result=result, spec=spec
             )
+
+            # Phase 1: Structured tool results — store full result in journal,
+            # keep only a compact ref in messages to reduce token usage.
+            if ENABLE_STRUCTURED_TOOL_RESULTS and not _is_error_result(result):
+                result_ref = await j.append_tool_result(
+                    run_id,
+                    name,
+                    result,
+                    summary=extract_summary(result),
+                    evidence_urls=extract_urls(result),
+                    call_id=call_id,
+                )
+                msg = {
+                    "role": "tool",
+                    "tool_call_id": call_id,
+                    "name": name,
+                    "content": json.dumps({
+                        "ref": result_ref,
+                        "summary": extract_summary(result),
+                        "evidence_urls": extract_urls(result)[:10],
+                    }),
+                }
+
             state.messages.append(msg)
             state.last_tool_started = None
             await j.append(

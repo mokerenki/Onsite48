@@ -1,0 +1,24 @@
+{
+  "v1": {
+    "secret": "dev-secret-please-change",
+    "token_hmac_secret": "dev-secret-please-change",
+    "admin_password": "dev-admin-please-change",
+    "admin_secret": "dev-admin-please-change",
+    "websocket_write_timeout": "10s",
+    "heartbeat_interval": "40s",
+    "read_timeout": "0s",
+    "write_timeout": "0s",
+    "proxy_headers": true,
+    "proxy_proxy_claims": true,
+    "use_protobuf": true,
+    "allowed_origins": [
+      "localhost",
+      "127.0.0.1"
+    ],
+    "allowed_protocols": ["browser", "iframe", "jsonp", "websocket"],
+    "allowed_http_headers": ["*"],
+    "allowed_http_methods": ["POST", "GET", "PUT", "DELETE", "OPTIONS"],
+    "allow_credentials": true,
+    "cookie_insecure": false
+  }
+}

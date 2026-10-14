@@ -17,9 +17,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.api.realtime import record_event
 from app.api.websocket_handler import stream_task_events
-from app.models import ScheduledAgentTask, ScheduledTaskExecution, TaskStatus, TaskThread
 from app.core.task_presentation import concise_task_title, ensure_task_presentation
 from app.services.notifications import create_notification
+from app.memory.temporal_workflows import AgentTaskInput, get_temporal_dual_write
+from app.models import ScheduledAgentTask, ScheduledTaskExecution, TaskStatus, TaskThread
+import structlog
+
+logger = structlog.get_logger("onsite48.scheduled_runner")
 
 TERMINAL_EVENT_TYPES = {"task_complete", "task_error", "needs_confirmation", "needs_user_intervention", "needs_clarification", "task_cancelled"}
 TERMINAL_EXECUTION_STATUSES = {"completed", "needs_approval", "needs_user_intervention", "failed", "cancelled"}
@@ -138,6 +142,27 @@ async def run_scheduled_agent_task(
             schedule.last_task_thread_id = thread_id
             session.add(task)
         await session.commit()
+
+        # Phase 5: Temporal dual-write shadow submission (non-blocking)
+        try:
+            temporal = get_temporal_dual_write()
+            if temporal.enabled and temporal.available:
+                _temporal_input = AgentTaskInput(
+                    thread_id=thread_id,
+                    user_id=str(schedule.user_id),
+                    organization_id=str(schedule.organization_id),
+                    prompt=schedule.prompt,
+                    domain="scheduled",
+                    autonomy_policy=schedule.autonomy_policy or {"mode": "approval_required"},
+                    schedule_id=str(schedule.id),
+                    execution_id=str(execution.id),
+                )
+                _shadow_run_id = await temporal.submit_scheduled_task(_temporal_input)
+                if _shadow_run_id:
+                    execution.temporal_shadow_run_id = _shadow_run_id
+                    await session.commit()
+        except Exception as _temporal_exc:
+            logger.debug("scheduled_runner.temporal_shadow_skipped", error=str(_temporal_exc)[:120])
 
     try:
         async for event in stream_task_events(

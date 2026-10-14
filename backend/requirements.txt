@@ -39,6 +39,9 @@ cognee==1.5.3
 qdrant-client>=1.12.0
 kuzu>=0.6.0
 
+# ── Temporal.io (Phase 5) ────────────────────────────────────────
+temporalio>=1.7.0
+
 # ── Browser & Tools ────────────────────────────────────────────
 # ← pinned transitive deps that cause backtracking when cognee and
 #   browser-use are resolved together.

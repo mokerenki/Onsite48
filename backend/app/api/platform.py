@@ -1,7 +1,7 @@
 """Platform control-plane endpoints used by the Manus-style workspace shell."""
 from __future__ import annotations
 from typing import Any
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -73,3 +73,59 @@ async def artifact_export(artifact_id: str, version_id: str | None = None, user:
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Artifact version not found.") from exc
     return Response(content=content, media_type=str(item.get("content_type") or "application/octet-stream"), headers={"Content-Disposition": content_disposition(str(item.get("filename") or "artifact")), "X-Onsite48-Artifact-Version": str(item.get("version_id"))})
+
+
+@router.get("/artifacts/{artifact_id}/diff")
+async def artifact_diff(
+    artifact_id: str,
+    from_version: str = Query(..., description="Source version_id"),
+    to_version: str = Query(..., description="Target version_id"),
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict[str, Any]:
+    """Compute a structural diff between two artifact versions."""
+    member = await membership(session, user)
+    manifest = artifact_versions.get(
+        organization_id=str(member.organization_id), artifact_id=artifact_id
+    )
+    versions = manifest.get("versions", [])
+    from_item = next((v for v in versions if v.get("version_id") == from_version), None)
+    to_item = next((v for v in versions if v.get("version_id") == to_version), None)
+    if from_item is None or to_item is None:
+        raise HTTPException(status_code=404, detail="One or both artifact versions not found.")
+
+    from_content = artifact_versions.export(
+        organization_id=str(member.organization_id), artifact_id=artifact_id, version_id=from_version
+    )[1]
+    to_content = artifact_versions.export(
+        organization_id=str(member.organization_id), artifact_id=artifact_id, version_id=to_version
+    )[1]
+
+    from_text = from_content.decode("utf-8", errors="replace")
+    to_text = to_content.decode("utf-8", errors="replace")
+
+    from_lines = from_text.splitlines()
+    to_lines = to_text.splitlines()
+
+    changes: list[dict[str, Any]] = []
+    import difflib
+    matcher = difflib.SequenceMatcher(a=from_lines, b=to_lines, autojunk=False)
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            continue
+        for line in from_lines[i1:i2]:
+            changes.append({"type": "removed", "line": line})
+        for line in to_lines[j1:j2]:
+            changes.append({"type": "added", "line": line})
+
+    added_lines = sum(1 for c in changes if c["type"] == "added")
+    removed_lines = sum(1 for c in changes if c["type"] == "removed")
+
+    return {
+        "from_version": from_version,
+        "to_version": to_version,
+        "changes": changes,
+        "added_lines": added_lines,
+        "removed_lines": removed_lines,
+        "modified_fields": len(set(c["line"] for c in changes if c["type"] == "added")),
+    }

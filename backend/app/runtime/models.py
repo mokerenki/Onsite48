@@ -107,9 +107,18 @@ async def complete(
     temperature: float | None = None,
     max_tokens: int | None = None,
     model_override: str | None = None,
+    model: str | None = None,
     model_router: Any = None,
 ) -> CompleteResult:
     tools = tools or []
+    # Phase 1: accept model="fast" as an alias for the cheapest/fastest provider (DeepSeek)
+    if model == "fast":
+        try:
+            from app.runtime.lane_defaults import DEEPSEEK_DEFAULT
+            model = DEEPSEEK_DEFAULT
+        except Exception:
+            model = os.environ.get("DEEPSEEK_MODEL") or "deepseek-chat"
+        model_override = model
     if model_override:
         model_name = model_override
     else:

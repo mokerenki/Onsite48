@@ -18,7 +18,7 @@ import os
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, ClassVar, Dict, List, Optional
 
 import httpx
 import structlog
@@ -707,6 +707,37 @@ class ModelRouter:
     ROLE_VERIFICATION = "verification"
     ROLE_FALLBACK = "fallback"
 
+    #: Per-role fallback chains. Order matters: first entry is the preferred
+    #: provider for that role, subsequent entries are tried on failure.
+    #: Names map to keys in self._available ("planner", "nvidia", "kimi", "deepseek").
+    ROLE_FALLBACK_CHAINS: ClassVar[dict[str, list[str]]] = {
+        "planning": ["planner", "nvidia", "kimi", "deepseek"],
+        "researcher": ["planner", "nvidia", "kimi", "deepseek"],
+        "verifier": ["kimi", "deepseek", "nvidia", "planner"],
+        "fast": ["deepseek", "kimi", "nvidia", "planner"],
+        "vision": ["nvidia", "kimi", "planner", "deepseek"],
+        "coder": ["planner", "nvidia", "kimi", "deepseek"],
+        "browser": ["nvidia", "kimi", "planner", "deepseek"],
+    }
+
+    #: Provider-specific timeouts in seconds. Slower providers get more time.
+    PROVIDER_TIMEOUTS: ClassVar[dict[str, int]] = {
+        "planner": 90,
+        "nvidia": 60,
+        "kimi": 45,
+        "deepseek": 30,
+    }
+
+    #: Cost per 1M tokens (USD) — used for cost-aware routing decisions.
+    #: Key is provider name from config.provider.
+    PROVIDER_COSTS: ClassVar[dict[str, dict[str, float]]] = {
+        "planner": {"input": 0.15, "output": 0.60},
+        "nvidia": {"input": 0.10, "output": 0.40},
+        "kimi": {"input": 0.95, "output": 4.00},
+        "deepseek": {"input": 0.14, "output": 0.28},
+    }
+
+
     def __init__(self):
         """Build independent model lanes for planning and vision.
 
@@ -800,6 +831,8 @@ class ModelRouter:
             **self._lane_clients,
         }
         self._provider_failures: dict[str, int] = {}
+        self._current_task_cost: float = 0.0
+        self._max_task_cost: float = float(os.getenv("MAX_TASK_COST_USD", "5.0"))
         # Cached capability probe: not every chat() implementation accepts a
         # schema constraint, and probing per call would add overhead.
         self._structured_support: dict[int, tuple[Any, bool]] = {}
@@ -862,14 +895,91 @@ class ModelRouter:
             error_type=type(exc).__name__,
         )
 
+    def _role_fallback_clients(self, role: str, primary: BaseModelClient) -> list[BaseModelClient]:
+        """Return fallback candidates for a role, honoring ROLE_FALLBACK_CHAINS."""
+        chain_names = self.ROLE_FALLBACK_CHAINS.get(role, ["deepseek", "kimi", "nvidia", "planner"])
+        fallers: list[BaseModelClient] = []
+        for name in chain_names:
+            client = self._available.get(name)
+            if client is None or client is primary:
+                continue
+            if not self._provider_healthy(client):
+                continue
+            fallers.append(client)
+        return fallers
+
     def _fallback_clients(self, primary: BaseModelClient) -> list[BaseModelClient]:
-        return [
-            self._available[name]
-            for name in ("kimi", "deepseek", "nvidia")
-            if name in self._available
-            and self._available[name] is not primary
-            and self._provider_healthy(self._available[name])
+        """Backward-compatible fallback: uses the 'planning' chain."""
+        return self._role_fallback_clients("planning", primary)
+
+    def _sort_by_cost_efficiency(self, candidates: list[BaseModelClient], role: str) -> list[BaseModelClient]:
+        """Sort candidates by estimated cost for this role (lower first)."""
+        def cost_score(client: BaseModelClient) -> float:
+            name = self._provider_name(client)
+            costs = self.PROVIDER_COSTS.get(name, {"input": 1.0, "output": 1.0})
+            return costs["input"] + costs["output"]
+        return sorted(candidates, key=cost_score)
+
+    def _cheapest_healthy_provider(self) -> BaseModelClient:
+        """Return the cheapest healthy provider."""
+        healthy = [
+            (c, self._provider_name(c)) for c in self._available.values()
+            if self._provider_healthy(c)
         ]
+        if not healthy:
+            raise RuntimeError("No healthy model provider available.")
+        return min(healthy, key=lambda x: sum(self.PROVIDER_COSTS.get(x[1], {"input": 999, "output": 999}).values()))[0]
+
+    def _provider_timeout(self, client: BaseModelClient) -> float:
+        """Get the configured timeout for this provider."""
+        name = self._provider_name(client)
+        return float(self.PROVIDER_TIMEOUTS.get(name, 45))
+
+    def _record_cost(self, client: BaseModelClient, response: ModelResponse, role: str) -> None:
+        """Accumulate cost metrics for the current task."""
+        if response.cost_usd is not None:
+            self._current_task_cost += response.cost_usd
+            metrics.inc(
+                "onsite48_model_cost_usd_total",
+                float(response.cost_usd),
+                labels={"role": role, "provider": self._provider_name(client)},
+            )
+
+    def _reset_task_cost(self) -> None:
+        """Reset per-task cost accumulation. Call between top-level tasks."""
+        self._current_task_cost = 0.0
+
+    @staticmethod
+    def system_prompt_for_provider(provider: str, base_prompt: str | None = None) -> str:
+        """Return a provider-specific system prompt, falling back to base.
+
+        Provider-specific prompts are optimized for each model's strengths:
+        - nemotron: explicit tool-call format, strict JSON
+        - kimi (K2.6): structured step-by-step, verbose instructions
+        - nvidia (Kimi K3): vision-aware, concise bullet format
+        - deepseek: reasoning-oriented, cost-aware
+        """
+        from pathlib import Path
+
+        prompts_dir = Path(__file__).resolve().parent.parent / "runtime" / "prompts"
+        name_map = {
+            "planner": "system_nemotron.txt",
+            "nvidia": "system_kimi_k3.txt",
+            "kimi": "system_kimi_k2.txt",
+            "deepseek": "system_deepseek.txt",
+        }
+        prompt_file = name_map.get(provider.lower(), "")
+        if prompt_file:
+            path = prompts_dir / prompt_file
+            if path.exists():
+                return path.read_text(encoding="utf-8").strip()
+        if base_prompt is not None:
+            return base_prompt
+        # Fall back to the default system prompt
+        default_path = prompts_dir / "system_v2.txt"
+        if default_path.exists():
+            return default_path.read_text(encoding="utf-8").strip()
+        return base_prompt or ""
 
     async def route(
         self,
@@ -897,16 +1007,39 @@ class ModelRouter:
             }
             resolved = aliases.get(role, "planning")
             if resolved not in self._role_map:
-                # last resort: first available client
                 resolved = next(iter(self._role_map), role)
         client = self._role_map.get(resolved)
         if not client:
             raise ValueError(f"Unknown role: {role}")
-        try:
-            deadline = max(5.0, float(os.getenv("MODEL_CALL_DEADLINE_SECONDS", "45")))
-        except (TypeError, ValueError):
-            deadline = 45.0
-        candidates = [client] + self._fallback_clients(client)
+        # Build candidate list: primary first, then role-specific fallbacks
+        chain_names = self.ROLE_FALLBACK_CHAINS.get(resolved, ["deepseek", "kimi", "nvidia", "planner"])
+        candidates: list[BaseModelClient] = []
+        for name in chain_names:
+            candidate = self._available.get(name)
+            if candidate is None or candidate is client:
+                continue
+            if not self._provider_healthy(candidate):
+                continue
+            candidates.append(candidate)
+        candidates = [client] + candidates
+
+        # Cost-aware ordering: for cost-sensitive roles (fast, researcher),
+        # sort fallbacks by estimated cost. Primary is always first unless
+        # budget is nearly exhausted.
+        cost_sensitive_roles = {"fast", "researcher", "fallback", "verification"}
+        if resolved in cost_sensitive_roles:
+            budget_pct = self._current_task_cost / self._max_task_cost if self._max_task_cost > 0 else 0
+            if budget_pct > 0.85:
+                # Budget nearly exhausted — use cheapest provider only
+                cheapest = self._cheapest_healthy_provider()
+                if cheapest is not client:
+                    candidates = [cheapest] + [c for c in candidates[1:] if c is not cheapest]
+            elif budget_pct > 0.60:
+                # Sort fallbacks (not primary) by cost efficiency
+                primary = candidates[0]
+                fallbacks = self._sort_by_cost_efficiency(candidates[1:], resolved)
+                candidates = [primary] + fallbacks
+
         last_error: Exception | None = None
         with tracing.span(
             "model.route",
@@ -921,18 +1054,18 @@ class ModelRouter:
                     continue
                 try:
                     call_started = time.perf_counter()
+                    timeout_for_candidate = self._provider_timeout(candidate)
                     metrics.inc("onsite48_model_calls_total", labels={"role": role, "provider": self._provider_name(candidate)})
                     response = await asyncio.wait_for(
                         self._call_candidate(
                             candidate, messages, system_prompt, temperature, max_tokens,
                             response_schema, tools=tools, tool_choice=tool_choice,
                         ),
-                        timeout=deadline if candidate is client else min(deadline, 20.0),
+                        timeout=timeout_for_candidate if candidate is client else min(timeout_for_candidate, 20.0),
                     )
                     self._mark_success(candidate)
+                    self._record_cost(candidate, response, role)
                     metrics.observe("onsite48_model_latency_seconds", time.perf_counter() - call_started, labels={"role": role, "provider": self._provider_name(candidate)})
-                    if response.cost_usd is not None:
-                        metrics.inc("onsite48_model_cost_usd_total", float(response.cost_usd), labels={"role": role, "provider": self._provider_name(candidate)})
                     self._annotate_model_span(active_span, response, candidate, role)
                     return response
                 except Exception as exc:
@@ -1036,35 +1169,42 @@ class ModelRouter:
                        "step_adjustment": getattr(self, "ROLE_STEP_ADJUSTMENT", "planning")}
             resolved = aliases.get(role, "planning")
             if resolved not in self._role_map:
-                # last resort: first available client
                 resolved = next(iter(self._role_map), role)
         client = self._role_map.get(resolved)
         if not client:
             raise ValueError(f"Unknown role: {role}")
-        try:
-            deadline = max(5.0, float(os.getenv("MODEL_CALL_DEADLINE_SECONDS", "45")))
-        except (TypeError, ValueError):
-            deadline = 45.0
-        candidates = [client] + self._fallback_clients(client)
+        chain_names = self.ROLE_FALLBACK_CHAINS.get(resolved, ["deepseek", "kimi", "nvidia", "planner"])
+        candidates: list[BaseModelClient] = []
+        for name in chain_names:
+            candidate = self._available.get(name)
+            if candidate is None or candidate is client:
+                continue
+            if not self._provider_healthy(candidate):
+                continue
+            candidates.append(candidate)
+        candidates = [client] + candidates
         last_error: Exception | None = None
         for candidate in candidates:
             if candidate is not client and not self._provider_healthy(candidate):
                 continue
             emitted = False
             try:
+                timeout_for_candidate = self._provider_timeout(candidate)
                 iterator = candidate.stream(messages, system_prompt, temperature, max_tokens)
                 while True:
                     try:
-                        chunk = await asyncio.wait_for(iterator.__anext__(), timeout=deadline)
+                        chunk = await asyncio.wait_for(iterator.__anext__(), timeout=timeout_for_candidate)
                     except StopAsyncIteration:
                         break
                     emitted = True
                     yield chunk
                 self._mark_success(candidate)
+                self._record_cost(candidate, ModelResponse(content="", model=str(candidate.config.model), provider=self._provider_name(candidate), usage=TokenUsage(), latency_ms=0), resolved)
                 return
             except Exception as exc:
                 last_error = exc
                 self._mark_failure(candidate, exc)
+                metrics.inc("onsite48_model_failures_total", labels={"role": role, "provider": self._provider_name(candidate), "error": type(exc).__name__})
                 if emitted:
                     raise
         raise last_error or RuntimeError("No healthy streaming provider is available.")

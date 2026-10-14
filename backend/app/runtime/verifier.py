@@ -13,6 +13,7 @@ from typing import Any
 import structlog
 
 from app.runtime.models import complete as model_complete
+from app.runtime.research_control import count_successful_retrievals, is_research_goal
 
 logger = structlog.get_logger("onsite48.runtime.verifier")
 
@@ -300,6 +301,8 @@ def apply_verdict_to_terminal(
     verdict: dict[str, Any],
     finish_summary: str,
     finish_attempts: int = 1,
+    goal: str = "",
+    key_results: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Map verifier verdict + agent finish into an honest terminal payload."""
     v = verdict.get("verdict") or "unverifiable"
@@ -332,6 +335,47 @@ def apply_verdict_to_terminal(
         }
 
     if v == "fail":
+        # Research deliverables: partial coverage is acceptable (see the
+        # research rubric). A "fail" here usually means "not every
+        # sub-question answered" or "single-source facts" — which is
+        # exactly completed_unverified. Downgrade instead of forcing a
+        # re-research loop over already-collected evidence.
+        dtype, _rubric = classify_deliverable(goal)
+        retrievals = count_successful_retrievals(key_results or [])
+        if dtype == "research" or is_research_goal(goal):
+            if retrievals <= 0:
+                if finish_attempts < MAX_FINISH_ATTEMPTS:
+                    return {
+                        "status": "_retry_finish",
+                        "summary": finish_summary,
+                        "verifier": verdict,
+                        "unmet_requirements": unmet or ["no retrieval evidence in ledger"],
+                        "missing_evidence": missing or ["web_search/open_page results"],
+                        "retry_hint": (
+                            "Research finish rejected: no successful retrieval tools in the ledger. "
+                            "Search or open sources, then finish again with evidence_refs."
+                        ),
+                    }
+                return {
+                    "status": "failed",
+                    "summary": (
+                        f"{finish_summary}\n\n[Verifier] Research finished without retrieval evidence."
+                    ),
+                    "verifier": verdict,
+                    "unmet_requirements": unmet or ["no retrieval evidence"],
+                    "missing_evidence": missing,
+                }
+            note = (
+                f"{finish_summary}\n\n[Verifier] Research partially verified. "
+                f"Unmet: {'; '.join(unmet) or 'see evidence'}."
+            )
+            return {
+                "status": "completed_unverified",
+                "summary": note,
+                "verifier": verdict,
+                "unmet_requirements": unmet,
+                "missing_evidence": missing,
+            }
         if finish_attempts < MAX_FINISH_ATTEMPTS:
             failed_checks = [
                 c.get("criterion", "?")

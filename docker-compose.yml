@@ -50,6 +50,49 @@ services:
       retries: 12
     networks: [onsite48_network]
 
+  centrifugo:
+    image: centrifugo/centrifugo:v6.9
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+        reservations:
+          memory: 64M
+    command: ["centrifugo", "--config", "/etc/centrifugo/config.json"]
+    volumes:
+      - ./centrifugo/config.json:/etc/centrifugo/config.json:ro
+    expose: ["8001"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [onsite48_network]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.76.0
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          memory: 256M
+    environment:
+      COLLECTOR_ZIPKIN_HOST_PORT: 9411
+      QUERY_BASE_PATH: /
+      JAEGER_AGENT_PORT: 6831
+      JAEGER_ENDPOINT: http://jaeger:14268/api/traces
+    ports:
+      - "16686:16686"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [onsite48_network]
+
   qdrant:
     image: qdrant/qdrant:v1.12.4
     restart: unless-stopped
@@ -105,6 +148,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-onsite48}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-onsite48}
       REDIS_URL: redis://redis:6379/0
+      USE_REDIS_WS_REGISTRY: "true"
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6333
       KIMI_API_KEY: ${KIMI_API_KEY:?Set KIMI_API_KEY in .env}
@@ -131,6 +175,14 @@ services:
       # `docker compose up` name the missing variable, instead of the app
       # starting and then dying with a less obvious message. For local Docker
       # Desktop over http, set COOKIE_SECURE=false and ENVIRONMENT=development.
+      #
+      # This is required rather than defaulted because ENVIRONMENT above
+      # defaults to production, and a deployed environment now refuses to boot
+      # with COOKIE_SECURE=false or a non-https CORS origin
+      # (app/core/config.py::_validate_tls_transport). Requiring it here makes
+      # `docker compose up` name the missing variable, instead of the app
+      # starting and then dying with a less obvious message. For local Docker
+      # Desktop over http, set COOKIE_SECURE=false and ENVIRONMENT=development.
       COOKIE_SECURE: "${COOKIE_SECURE:?Set COOKIE_SECURE in .env: true for HTTPS deployments, false only for local http development}"
       SANDBOX_ENABLED: ${SANDBOX_ENABLED:-false}
       SANDBOX_RUNTIME: ${SANDBOX_RUNTIME:-docker}
@@ -144,11 +196,21 @@ services:
       # Existing attachments live within the persistent onsite48_kuzu volume.
       # Keep this path stable so an upgrade never hides prior user files.
       ATTACHMENT_STORAGE_ROOT: /tmp/onsite48/uploads
+      # Observability: OpenTelemetry + Jaeger + Centrifugo
+      OTEL_TRACES_EXPORTER: "jaeger"
+      OTEL_SERVICE_NAME: "onsite48-api"
+      JAEGER_HOST: "jaeger"
+      JAEGER_PORT: "6831"
+      JAEGER_ENDPOINT: "http://jaeger:14268/api/traces"
+      CENTRIFUGO_URL: "http://centrifugo:8001"
+      CENTRIFUGO_SECRET: "${CENTRIFUGO_SECRET:-dev-secret-please-change}"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      centrifugo:
+        condition: service_started
       qdrant:
         # Wait for /readyz rather than just the process. "service_started"
         # let the memory initializer race a Qdrant that had not finished

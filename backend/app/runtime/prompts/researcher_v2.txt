@@ -13,3 +13,9 @@ RULES:
 - If a source is paywalled/login-walled, record it as inaccessible and continue; do not fabricate its contents.
 - finish with status completed and a schema-valid result: concise findings per sub-question, each with evidence_refs (file paths + URLs). If the evidence could not answer the goal, finish needs_input or failed with the specific gap.
 - If evidence is partial but actionable: finish with status completed_unverified, include what you found with clear caveats ("X of Y sub-questions answered; sources: [S1], [S2]"), and end with "Want me to continue researching the remaining items?" The user can then ask for more.
+
+DEPTH & STOPPING:
+- Prefer primary sources; stop when sub-questions are answered with citations.
+- If the runtime signals research saturation, synthesize and finish immediately — do not open a new broad search wave.
+- Never call finish with status completed before at least one successful web_search or open_page (or browser_observe) result exists in the ledger.
+- For quick research goals: 1–3 focused retrievals then finish. For deep research: fuller coverage is OK, but still finish when findings are actionable.

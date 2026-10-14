@@ -21,30 +21,10 @@ from app.core.policy_engine import (
     policy_engine,
 )
 from app.runtime.tools import SideEffect, ToolSpec
+from app.runtime.policy_engine import get_policy_engine
+from app.runtime.policy_types import Decision, PolicyDecisionResult
 
 logger = structlog.get_logger("onsite48.runtime.policy")
-
-
-class Decision(str, Enum):
-    ALLOW = "ALLOW"
-    DENY = "DENY"
-    APPROVAL = "APPROVAL"
-    TAKEOVER = "TAKEOVER"
-
-
-@dataclass
-class PolicyDecisionResult:
-    decision: Decision
-    reason: str
-    core: Optional[PolicyResult] = None
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "decision": self.decision.value,
-            "reason": self.reason,
-            "metadata": self.metadata,
-        }
 
 
 _DEFAULT_SIDE_EFFECT_POLICY: dict[SideEffect, Decision] = {
@@ -238,6 +218,24 @@ def evaluate(
     name = str(call.get("name") or spec.name)
     args = call.get("arguments") or {}
     org_policy = org_policy or OrgPolicyTable()
+
+    # Phase 4: consult YAML-based org policy first (declarative overrides)
+    try:
+        yaml_engine = get_policy_engine()
+        org_id = (
+            str(run_state.get("org_id") or run_state.get("organization_id") or "default")
+        )
+        yaml_decision = yaml_engine.evaluate(
+            tool_name=name,
+            args=args,
+            run_state=run_state,
+            org_id=org_id,
+        )
+        if yaml_decision is not None:
+            logger.debug("runtime.policy.yaml_decision", tool=name, decision=yaml_decision.decision.value)
+            return yaml_decision
+    except Exception as exc:
+        logger.debug("runtime.policy.yaml_eval_failed", error=str(exc))
 
     if name in org_policy.deny_tools:
         return PolicyDecisionResult(Decision.DENY, f"org policy denies tool {name}")

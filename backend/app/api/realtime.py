@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import asyncio
 import json
 import uuid
 from datetime import datetime, timezone
@@ -496,6 +498,32 @@ async def secure_websocket_endpoint(
     current_thread_id: Optional[str] = None
     terminal_event_id: Optional[str] = None
 
+    # ─── Server-side heartbeat ────────────────────────────────────────
+    # Send periodic pings to keep the connection alive through proxies,
+    # load balancers, and network devices that drop idle connections.
+    # Client also pings every 10s; server pings every 15s provides bidirectional
+    # keepalive so a network blip during a long model call (30-60s) doesn't
+    # silently kill the socket.
+    heartbeat_task: Optional[asyncio.Task] = None
+    heartbeat_interval = int(os.getenv("WEBSOCKET_HEARTBEAT_INTERVAL_SECONDS", "15"))
+
+    async def _heartbeat() -> None:
+        try:
+            while True:
+                await asyncio.sleep(heartbeat_interval)
+                try:
+                    await websocket.send_json({"type": "ping", "server": True, "timestamp": utcnow().isoformat()})
+                except Exception:
+                    # Connection closed, stop heartbeat
+                    break
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            # Don't log heartbeat failures; they're expected on close
+            pass
+
+    heartbeat_task = asyncio.create_task(_heartbeat())
+
     def _track(task: TaskThread) -> None:
         """Record which task the cleanup path is allowed to touch.
 
@@ -710,6 +738,9 @@ async def secure_websocket_endpoint(
                 if not prompt:
                     await send({"type": "error", "message": "Please enter a task before running Synth."})
                     continue
+                research_depth = data.get("research_depth")
+                if research_depth not in (None, "quick", "standard", "deep"):
+                    research_depth = None
                 raw_attachment_ids = data.get("attachments", [])
                 attachment_ids = raw_attachment_ids if isinstance(raw_attachment_ids, list) and all(isinstance(item, str) for item in raw_attachment_ids) else []
                 try:
@@ -795,6 +826,7 @@ async def secure_websocket_endpoint(
                     browser_service,
                     extra_state={
                         "task_metadata": task.execution_metadata or {},
+                        "research_depth": research_depth,
                         **browser_scope_from_session(owned_browser_session),
                     },
                 ):
@@ -819,6 +851,9 @@ async def secure_websocket_endpoint(
                 if not follow_up:
                     await send({"type": "error", "message": "Please enter a follow-up message."}, task)
                     continue
+                research_depth = data.get("research_depth")
+                if research_depth not in (None, "quick", "standard", "deep"):
+                    research_depth = None
                 owned_browser_session = await load_owned_browser_session(data.get("browser_session_id"))
                 if owned_browser_session is not None:
                     await browser_live_registry.subscribe(owned_browser_session.id, websocket)
@@ -901,6 +936,7 @@ async def secure_websocket_endpoint(
                         "conversation_context": conversation_context,
                         "is_follow_up": True,
                         "email_artifacts": email_artifacts,
+                        "research_depth": research_depth,
                         **browser_scope_from_session(owned_browser_session),
                     },
                     reset_checkpoint=True,
@@ -915,6 +951,12 @@ async def secure_websocket_endpoint(
                 if task.status in ACTIVE_TASK_STATUSES:
                     await send({"type": "error", "message": "Wait for the current task to finish before retrying it."}, task)
                     continue
+                research_depth = data.get("research_depth")
+                if research_depth not in (None, "quick", "standard", "deep"):
+                    # Fall back to the original task's research_depth if present
+                    research_depth = (task.execution_metadata or {}).get("research_depth")
+                    if research_depth not in (None, "quick", "standard", "deep"):
+                        research_depth = None
                 retry_goal = original_task_goal(task)
                 if not retry_goal:
                     await send({"type": "error", "message": "This task has no recoverable original request. Please submit it again."}, task)
@@ -950,6 +992,7 @@ async def secure_websocket_endpoint(
                         "task_metadata": current_task.execution_metadata or {},
                         "conversation_context": retry_context,
                         "is_retry": True,
+                        "research_depth": research_depth,
                     },
                     reset_checkpoint=True,
                 ):
@@ -1063,8 +1106,14 @@ async def secure_websocket_endpoint(
                 # Recorded only after the compare-and-swap succeeds, so a resume
                 # that lost the race does not leave an answer in the transcript
                 # for a task that never consumed it.
+                research_depth = data.get("research_depth")
+                if research_depth not in (None, "quick", "standard", "deep"):
+                    research_depth = (task.execution_metadata or {}).get("research_depth")
+                    if research_depth not in (None, "quick", "standard", "deep"):
+                        research_depth = None
                 resume_extra_state: dict[str, Any] = {
                     "task_metadata": task.execution_metadata or {},
+                    "research_depth": research_depth,
                 }
                 if clarification_answer:
                     async with session_factory() as session:
@@ -1135,6 +1184,14 @@ async def secure_websocket_endpoint(
         except Exception:
             pass
     finally:
+        # Stop server-side heartbeat
+        if heartbeat_task is not None:
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except Exception:
+                pass
+        
         # Last-resort guarantee for the invariant "no task is left RUNNING":
         # whatever path left this handler, anything still in flight is failed
         # and its lease released. Both calls are idempotent, so the earlier
@@ -1149,7 +1206,7 @@ async def secure_websocket_endpoint(
             ),
         )
         try:
-            await browser_live_registry.unsubscribe(websocket)
+            await browser_live_registry.unsubscribe_websocket(websocket)
         except Exception as cleanup_exc:
             # Cleanup must not raise out of the endpoint: an unsubscribe failure
             # would mask the real disconnect reason from the access log.

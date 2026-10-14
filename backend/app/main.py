@@ -2,9 +2,10 @@ import asyncio
 import os
 import time
 import uuid
-import structlog
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+import structlog
 from dotenv import load_dotenv
 
 # Load .env from the project root (sibling of backend/) before any os.getenv() reads.
@@ -19,48 +20,47 @@ if _env_path.exists():
     load_dotenv(_env_path, override=False)
 else:
     load_dotenv(override=False)
-from app.tools.current_time import CurrentTimeTool
-from app.tools.email_tool import EmailTool
-from app.tools.calendar_tool import CalendarTool
-from app.tools.document_tool import DocumentTool
-from app.tools.slack_tool import SlackTool
-from typing import Any, Optional
 # from app.tools.browser_control_tool import BrowserControlTool
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
+
+import redis.asyncio as aioredis
+from fastapi import FastAPI, HTTPException, Request, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from sqlalchemy import select, text
+
+from app.agents.codeact import CodeActTool
+from app.agents.router import DomainRouter
 from app.api.auth import router as auth_router
+from app.api.browser_bridge import bridge_websocket_endpoint
+from app.api.browser_bridge import router as browser_bridge_router
+from app.api.browser_sessions import router as browser_sessions_router
+from app.api.chat_automation import router as chat_automation_router
+from app.api.command_center import router as command_center_router
+from app.api.computer import router as computer_router
 from app.api.connectors import router as connectors_router
 from app.api.custom_connectors import router as custom_connectors_router
 from app.api.files import router as files_router
-from app.api.web_previews import router as web_previews_router
-from app.api.computer import router as computer_router
-from app.api.browser_bridge import bridge_websocket_endpoint, router as browser_bridge_router
-from app.api.browser_sessions import router as browser_sessions_router
 from app.api.library import router as library_router
-from app.api.command_center import router as command_center_router
 from app.api.notifications import router as notifications_router
-from app.api.proactive import router as proactive_router
-from app.api.chat_automation import router as chat_automation_router
 from app.api.operator import router as operator_router
 from app.api.platform import router as platform_router
-from app.api.rbac import router as rbac_router
-from app.api.sandbox_api import router as sandbox_router
-from app.api.realtime import secure_websocket_endpoint
-from app.sandbox.persistent_manager import persistent_sandbox_manager
-from app.mcp_clients.mcp_registry import MCPRegistry
-from app.tools.chart_visualization_tool import ChartVisualizationTool
-
-
-from app.core import instances
-
-import redis.asyncio as aioredis
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
-
+from app.api.proactive import router as proactive_router
+from app.api.proactive_engine import router as proactive_engine_router
 from app.api.product_tasks import router as product_tasks_router
+from app.api.rbac import router as rbac_router
+from app.api.realtime import secure_websocket_endpoint
+from app.api.sandbox_api import router as sandbox_router
+from app.api.tasks_replay import router as tasks_replay_router
+from app.api.web_previews import router as web_previews_router
+from app.core import instances
 from app.core.config import CONFIG, settings
-from app.core.security import get_websocket_user
-from app.core.tracing import TRACE_HEADER, bind_request_trace, current_trace_id
+from app.core.context import onsite48
+from app.core.model_router_kimi_deepseek import KimiDeepSeekRouter
+from app.core.observability import setup_logging, setup_telemetry
+from app.core.platform_metrics import metrics as platform_metrics_registry
+from app.core.proactive_scheduler import ProactiveScheduler
 from app.core.readiness import (
     DISABLED,
     FAILED,
@@ -69,43 +69,73 @@ from app.core.readiness import (
     FeatureCheck,
     readiness_payload,
 )
-from app.models import OrganizationMember
-from sqlalchemy import select, text
-from app.db import close_database, get_session_factory, initialize_database
-from app.core.proactive_scheduler import ProactiveScheduler
-from app.core.model_router_kimi_deepseek import KimiDeepSeekRouter
 from app.core.redis_checkpointer import RedisCheckpointer
+from app.core.security import get_websocket_user
+from app.core.tracing import TRACE_HEADER, bind_request_trace
+from app.db import close_database, get_session_factory, initialize_database
+from app.mcp_clients.mcp_registry import MCPRegistry
 from app.memory.cognee_setup import CogneeMemory
-from app.agents.router import DomainRouter
-from app.tools.registry import ToolRegistry
-from app.tools.browser_tool import BrowserTool
-from app.tools.wide_research_tool import SpawnSubagentTool, WideResearchTool
-from app.tools.python_repl import PythonREPLTool
-from app.agents.codeact import CodeActTool
-from app.tools.whatsapp_tool import WhatsAppTool
-from app.tools.computer_tools import ComputerBackTool, ComputerClickAtTool, ComputerClickTool, ComputerFillTool, ComputerInspectTool, ComputerLocateTool, ComputerNavigateTool, ComputerPressKeyTool, ComputerReadPageTool, ComputerScrollTool, ComputerTypeAtTool
-from app.tools.my_browser_tools import register_my_browser_tools
+from app.memory.retriever_tool import MemoryRetrieverTool
+from app.models import OrganizationMember
+from app.sandbox.persistent_manager import persistent_sandbox_manager
+from app.services.agent_computer import AgentComputerManager
+from app.services.browser_automation_service import BrowserAutomationService
+from app.services.browser_bridge import BrowserBridgeService
+from app.services.browser_live_registry import _set_redis_registry, browser_live_registry
+from app.services.browser_session import BrowserSessionService
+
 # Legacy bridge_* tools remain importable for internal/compat use but are NOT registered
 # into the model-visible tool registry (tool surface collapse — protocol v3.1).
 from app.services.browser_session_router import BrowserSessionRouter
-from app.tools.library_tools import LibrarySearchTool
 from app.services.capability_catalog import register_business_capabilities
-from app.services.browser_automation_service import BrowserAutomationService
-from app.services.agent_computer import AgentComputerManager
-from app.services.visual_grounding import VisualGroundingService
-from app.services.browser_bridge import BrowserBridgeService
-from app.services.browser_session import BrowserSessionService
 from app.services.proactive_worker import ProactiveOperationsWorker
-from app.services.auth_handler import auth_handler
-from app.memory.retriever_tool import MemoryRetrieverTool
-from app.core.context import onsite48
-from app.core.platform_metrics import metrics as platform_metrics_registry
+from app.services.visual_grounding import VisualGroundingService
+from app.tools.browser_tool import BrowserTool
+from app.tools.calendar_tool import CalendarTool
+from app.tools.chart_visualization_tool import ChartVisualizationTool
+from app.tools.computer_tools import (
+    ComputerBackTool,
+    ComputerClickAtTool,
+    ComputerClickTool,
+    ComputerFillTool,
+    ComputerInspectTool,
+    ComputerLocateTool,
+    ComputerNavigateTool,
+    ComputerPressKeyTool,
+    ComputerReadPageTool,
+    ComputerScrollTool,
+    ComputerTypeAtTool,
+)
+from app.tools.current_time import CurrentTimeTool
+from app.tools.document_tool import DocumentTool
+from app.tools.email_tool import EmailTool
+from app.tools.library_tools import LibrarySearchTool
+from app.tools.my_browser_tools import register_my_browser_tools
+from app.tools.python_repl import PythonREPLTool
+from app.tools.registry import ToolRegistry
+from app.tools.slack_tool import SlackTool
+from app.tools.whatsapp_tool import WhatsAppTool
+from app.tools.wide_research_tool import SpawnSubagentTool, WideResearchTool
 
 logger = structlog.get_logger("aether.main")
+
+setup_logging()
+_tracing_enabled = setup_telemetry()
 
 
 async def _warm_optional_services(app: FastAPI) -> None:
     """Warm optional capabilities concurrently without blocking L1 readiness."""
+    async def warm_correction_store() -> None:
+        try:
+            from app.services.correction_store import correction_store
+            await correction_store.initialize()
+            app.state.correction_store = correction_store
+            app.state.capability_readiness["corrections"] = "ready"
+            logger.info("optional_service.ready", service="corrections")
+        except Exception as exc:
+            app.state.capability_readiness["corrections"] = "degraded"
+            logger.warning("optional_service.degraded", service="corrections", error=str(exc)[:240])
+
     async def warm_memory() -> None:
         try:
             await app.state.cognee_memory.initialize()
@@ -134,7 +164,7 @@ async def _warm_optional_services(app: FastAPI) -> None:
             app.state.capability_readiness["persistent_sandbox"] = "degraded"
             logger.warning("optional_service.degraded", service="persistent_sandbox", error=str(exc)[:240])
 
-    await asyncio.gather(warm_memory(), warm_mcp(), warm_sandbox())
+    await asyncio.gather(warm_memory(), warm_mcp(), warm_sandbox(), warm_correction_store())
 
 
 @asynccontextmanager
@@ -155,6 +185,14 @@ async def lifespan(app: FastAPI):
     app.state.redis_client = aioredis.from_url(settings.redis_url)
     await app.state.redis_client.ping()
     logger.info("redis.connected")
+
+    # Initialize Redis-backed browser live registry (Phase 0)
+    if os.environ.get("USE_REDIS_WS_REGISTRY", "").lower() in ("1", "true", "yes"):
+        _set_redis_registry(app.state.redis_client)
+        await browser_live_registry.start()
+        logger.info("browser_live_registry.initialized", backend="redis")
+    else:
+        logger.info("browser_live_registry.initialized", backend="memory")
 
     # Initialize Kimi/DeepSeek Model Router
     app.state.model_router = KimiDeepSeekRouter()
@@ -293,7 +331,7 @@ async def lifespan(app: FastAPI):
         tool_registry=app.state.tool_registry,
         mcp_registry=app.state.mcp_registry,
         domain_router=app.state.domain_router,
-        started_at=datetime.now(timezone.utc).isoformat(),
+        started_at=datetime.now(UTC).isoformat(),
     )
     logger.info("onsite48_context.initialized")
 
@@ -308,10 +346,30 @@ async def lifespan(app: FastAPI):
     instances.checkpointer = app.state.checkpointer
     instances.cognee_memory = app.state.cognee_memory
 
+    # Phase 4: Load YAML policy engine (synchronous, fast)
+    from app.runtime.policy_engine import get_policy_engine
+    get_policy_engine()
+
+    # Phase 5: Initialize Temporal dual-write shadow mode (non-blocking)
+    from app.memory.temporal_workflows import get_temporal_dual_write
+    _temporal = get_temporal_dual_write()
+    if _temporal.enabled:
+        asyncio.create_task(_temporal.initialize())
+
+    # Phase 5: Initialize proactive signal engine
+    from app.services.signal_engine import get_signal_engine
+    _signal_engine = get_signal_engine()
+    asyncio.create_task(_signal_engine.initialize())
+
     yield
 
     # ------------------- CLEANUP -------------------
     logger.info("application.shutdown")
+    # Stop the Redis WebSocket registry listener if it was started
+    try:
+        await browser_live_registry.stop()
+    except Exception:
+        pass
     for task in getattr(app.state, "optional_service_tasks", set()):
         if not task.done():
             task.cancel()
@@ -443,11 +501,13 @@ app.include_router(library_router)
 app.include_router(command_center_router)
 app.include_router(notifications_router)
 app.include_router(proactive_router)
+app.include_router(proactive_engine_router)
 app.include_router(chat_automation_router)
 app.include_router(operator_router)
 app.include_router(platform_router)
 app.include_router(rbac_router)
 app.include_router(sandbox_router)
+app.include_router(tasks_replay_router)
 # WebSocket endpoint
 @app.websocket("/ws/bridge")
 async def bridge_websocket_route(websocket: WebSocket):
