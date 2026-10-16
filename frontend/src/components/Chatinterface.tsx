@@ -1763,12 +1763,8 @@ if (data.state) {
     const threadId = threadIdRef.current;
     if (!threadId) return;
 
-    // Set the pause flag FIRST, before touching the socket. The onclose
-    // handler returns early when this is true, which prevents the close from
-    // scheduling a reconnect that would spin up a fresh backend session for a
-    // task the user just cancelled. handlePause does the same thing; without
-    // it the stop button closes the socket, onclose sees isPausedRef==false,
-    // and reconnects -- leaving the task looking alive when the user returns.
+    // Set the pause flag FIRST so the onclose handler returns early and does
+    // not schedule a reconnect or fail the task. handlePause does the same.
     isPausedRef.current = true;
     acceptsTaskEventsRef.current = false;
     clarificationPauseRef.current = false;
@@ -1778,8 +1774,38 @@ if (data.state) {
     setErrorMessage("Task cancelled by user");
     setPendingConfirmation(null);
 
-    // Close WebSocket. wsRef is cleared before close() so the onclose handler
-    // sees a stale socket and returns immediately, double-blocking reconnect.
+    // IMPORTANT: call the cancel API BEFORE closing the socket. The cancel
+    // endpoint signals the in-process cancel event (product_tasks.py:485),
+    // which is what actually interrupts the running model loop. Closing the
+    // socket first triggers the backend's onclose handler, which sees the
+    // task still RUNNING and marks it FAILED -- and by the time the cancel
+    // API call arrives the row is already terminal, so it returns 409 and
+    // the cancel event is never signaled. The model then runs to completion
+    // in the background while the UI shows "cancelled".
+    let cancelledOnServer = false;
+    try {
+      const response = await fetch(`/api/tasks/${threadId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
+        body: JSON.stringify({}),
+      });
+      cancelledOnServer = response.ok || response.status === 409;
+      if (!cancelledOnServer) {
+        const error = await response.json().catch(() => ({})) as { detail?: string };
+        throw new Error(error.detail || `Cancel failed with ${response.status}`);
+      }
+    } catch (err) {
+      // Surface the failure but keep going: the socket still needs closing so
+      // the UI does not hang on a spinner, and the local state already says
+      // cancelled.
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to cancel task on the server.');
+    }
+
+    // Close WebSocket AFTER the cancel API has signalled the runtime. wsRef is
+    // cleared before close() so the onclose handler sees a stale socket and
+    // returns immediately. By this point the task row is CANCELLED (terminal),
+    // so _fail_in_flight_task also returns early -- it only fails tasks that
+    // are still RUNNING.
     if (wsRef.current) {
       const socket = wsRef.current;
       wsRef.current = null;
@@ -1793,34 +1819,12 @@ if (data.state) {
       reconnectTimerRef.current = null;
     }
 
-    // Remove from paused state if any
-    try {
-      const response = await fetch(`/api/tasks/${threadId}/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
-        body: JSON.stringify({}),
-      });
-      if (!response.ok) {
-        // A 409 means the task was already terminal (the WebSocket disconnect
-        // cleaned it up first). That is still a successful stop from the
-        // user's perspective -- the task is no longer running.
-        const error = await response.json().catch(() => ({})) as { detail?: string };
-        if (response.status !== 409) {
-          throw new Error(error.detail || `Cancel failed with ${response.status}`);
-        }
-      }
-    } catch (err) {
-      // Don't leave the UI stuck on a spinner: the local state already says
-      // cancelled. Surface the failure so it is visible, not silently dropped.
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to cancel task on the server.');
-    }
-
     setRecentTasks((previous) => {
       const next = previous.map((item) => item.id === threadId ? { ...item, status: "cancelled" as const, updatedAt: new Date().toISOString() } : item);
       onTasksChange?.(next);
       return next;
     });
-    console.log("Task stopped:", threadId);
+    console.log("Task stopped:", threadId, "server_cancelled=", cancelledOnServer);
   }, [accessToken, onTasksChange]);
 
   // ─── Reset and New Task ────────────────────────────────────────
