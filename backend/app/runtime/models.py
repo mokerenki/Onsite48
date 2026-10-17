@@ -37,7 +37,6 @@ class CompleteResult:
 
 LANES = ("loop", "worker", "verifier", "summarizer", "vision")
 
-# Role aliases used when talking to the product router
 _ROLE_ALIASES = {
     "loop": "planning",
     "worker": "planning",
@@ -48,12 +47,10 @@ _ROLE_ALIASES = {
 
 
 def _resolve_router(explicit: Any = None) -> Any:
-    """Resolve router: explicit → injected → app singleton → test-only ModelRouter()."""
     if explicit is not None:
         return explicit
     if _injected_router is not None:
         return _injected_router
-    # Product singleton
     try:
         from app.core import instances
         router = getattr(instances, "model_router", None)
@@ -85,7 +82,6 @@ def _resolve_router(explicit: Any = None) -> Any:
             return router
     except Exception:
         pass
-    # Documented test-only fallback — never preferred in production
     try:
         from app.core.model_router_kimi_deepseek import KimiDeepSeekRouter
         logger.debug("runtime.models.using_ephemeral_kimi_deepseek_router")
@@ -141,6 +137,30 @@ async def _complete_impl(
     model_router: Any = None,
 ) -> CompleteResult:
     tools = tools or []
+    # Workstream B: model strategy defaults (explicit temperature/max_tokens win).
+    try:
+        from app.runtime.model_strategy import TaskSignals, decide_and_record
+        _lane = role if role in ("fast", "verifier", "coder", "browser", "researcher", "planner") else None
+        signals = TaskSignals(
+            explicit_lane=_lane,
+            is_verification=role in ("verifier", "verification", "summarizer"),
+            is_classification=role in ("fast", "intent", "title"),
+        )
+        decision = decide_and_record(signals)
+        if temperature is None:
+            temperature = decision.temperature
+        if max_tokens is None:
+            max_tokens = decision.max_tokens
+        if role in ("loop", "worker"):
+            role = decision.router_role or role
+        logger.debug(
+            "runtime.models.strategy",
+            lane=decision.lane,
+            profile=decision.profile,
+            timeout_s=decision.timeout_s,
+        )
+    except Exception:
+        pass
     # Phase 1: accept model="fast" as an alias for the cheapest/fastest provider (DeepSeek)
     if model == "fast":
         try:
@@ -168,11 +188,9 @@ async def _complete_impl(
             return result
     except Exception as exc:
         logger.warning("runtime.models.router_failed", error=str(exc), error_type=type(exc).__name__)
-        # Re-raise auth / config failures so eval can classify infra_error
         if _is_infra_error(exc):
             raise
 
-    # JSON fallback path (secondary)
     fallback_messages = list(messages)
     tool_desc = json.dumps(tools, ensure_ascii=False)[:12000]
     fallback_messages.append({
@@ -190,7 +208,6 @@ async def _complete_impl(
     parsed = _parse_json_tool_response(raw_text)
     path = "json_fallback"
     if parsed is None:
-        # Cap repair attempts at one
         repair = fallback_messages + [
             {"role": "assistant", "content": raw_text or ""},
             {"role": "user", "content": "Reply with valid JSON only."},
@@ -232,7 +249,6 @@ async def _complete_via_router(
 
     router_role = _ROLE_ALIASES.get(role, role)
 
-    # Prefer route() with tools
     if hasattr(router, "route"):
         try:
             resp = await router.route(
@@ -246,11 +262,9 @@ async def _complete_via_router(
             path = "native_tools" if tools else "native"
             return _normalize_router_response(resp, path=path)
         except TypeError as exc:
-            # Older route signature without tools=
             logger.debug("runtime.models.route_no_tools_kwarg", error=str(exc))
             try:
                 resp = await router.route(router_role, messages, temperature=temperature, max_tokens=max_tokens)
-                # Tools were not accepted → do not claim native_tools
                 return _normalize_router_response(resp, path="json_fallback" if tools else "native")
             except Exception as exc2:
                 logger.warning("runtime.models.route_failed", error=str(exc2))
@@ -299,7 +313,6 @@ def _normalize_router_response(resp: Any, *, path: str) -> CompleteResult:
                 "output_tokens": int(getattr(usage_obj, "output_tokens", 0) or 0),
             }
 
-    # Cost plumbing: always copy when present
     cost_usd = getattr(resp, "cost_usd", None)
     if cost_usd is None and isinstance(resp, dict):
         cost_usd = resp.get("cost_usd")
