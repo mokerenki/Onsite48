@@ -7,6 +7,7 @@ from typing import Any
 
 import structlog
 
+from app.runtime.hierarchical_plan import HierarchicalPlan
 from app.runtime.journal import Journal, RunState
 from app.runtime.observation import ObservationTracker, format_observation_message, observe_tool_result
 from app.runtime.tools import ToolSpec
@@ -102,8 +103,12 @@ class ContextBuilder:
         messages.append({"role": "user", "content": f"Goal:\n{state.goal}"})
         for msg in state.messages:
             messages.append(msg)
+        # Phase 2: hierarchical plan context (preferred over raw todo when present).
+        plan_block = self._hierarchical_plan_block(state)
+        if plan_block:
+            messages.append({"role": "user", "content": plan_block})
         todo = self._read_todo(state)
-        if todo:
+        if todo and not plan_block:
             messages.append({"role": "user", "content": f"Current todo.md:\n```\n{todo}\n```"})
         total = sum(len(str(m.get("content") or "")) for m in messages)
         if total > self.budget_chars:
@@ -120,6 +125,25 @@ class ContextBuilder:
             except OSError:
                 return ""
         return ""
+
+    def _hierarchical_plan_block(self, state: RunState) -> str:
+        """Render active hierarchical plan for the model, if any."""
+        raw = getattr(state, "hierarchical_plan", None)
+        if not raw and isinstance(getattr(state, "role_config", None), dict):
+            raw = state.role_config.get("hierarchical_plan")
+        if not raw:
+            return ""
+        try:
+            if isinstance(raw, HierarchicalPlan):
+                plan = raw
+            elif isinstance(raw, dict):
+                plan = HierarchicalPlan.from_dict(raw)
+            else:
+                return ""
+            return plan.to_context_block()
+        except Exception as exc:
+            logger.warning("runtime.hierarchical_plan.render_failed", error=str(exc)[:200])
+            return ""
 
     def _compact(self, messages: list[dict[str, Any]], state: RunState) -> list[dict[str, Any]]:
         if len(messages) <= 3:
@@ -179,8 +203,6 @@ class ContextBuilder:
                 repeat_count=progress.get("repeat_count"),
             )
 
-        # Prefer structured observation payload; fall back to offloaded raw text
-        # only when the result is enormous and we must preserve fidelity.
         max_chars = int(getattr(spec, "max_output_chars", None) or 8000)
         msg = format_observation_message(
             obs,
@@ -189,7 +211,6 @@ class ContextBuilder:
             source=f"tool:{name}",
         )
 
-        # Attach progress diagnostics for the loop without changing the message schema.
         try:
             body = json.loads(msg["content"]) if not str(msg["content"]).startswith("<untrusted") else None
             if isinstance(body, dict):
