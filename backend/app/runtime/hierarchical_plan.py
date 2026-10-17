@@ -45,8 +45,6 @@ class HierarchicalPlan:
     success_conditions: list[str] = field(default_factory=list)
     version: int = 1
 
-    # ----- construction -------------------------------------------------
-
     @classmethod
     def from_flat_steps(
         cls,
@@ -55,7 +53,6 @@ class HierarchicalPlan:
         *,
         success_conditions: list[str] | None = None,
     ) -> "HierarchicalPlan":
-        """Build a hierarchy with one implicit subgoal wrapping a flat step list."""
         plan = cls(goal=goal or "", success_conditions=list(success_conditions or []))
         plan.nodes["goal"] = PlanNode(id="goal", kind="goal", description=goal or "")
         plan.nodes["sg_main"] = PlanNode(
@@ -79,12 +76,12 @@ class HierarchicalPlan:
                 tool_args=dict(raw.get("tool_args") or raw.get("args") or {}),
                 expected_outcome=raw.get("expected_outcome"),
             )
+        plan.validate()
         plan._refresh_ready()
         return plan
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> "HierarchicalPlan":
-        """Build from a ModelPlanPayload-shaped dict (sub_goals + optional flat plan)."""
         if not isinstance(payload, dict):
             raise ValueError("payload must be a dict")
         goal = str(payload.get("refined_goal") or payload.get("goal") or "").strip()
@@ -125,18 +122,12 @@ class HierarchicalPlan:
                     )
         elif flat:
             return cls.from_flat_steps(goal, flat, success_conditions=plan.success_conditions)
-        else:
-            # Empty plan — goal only
-            pass
 
         plan.validate()
         plan._refresh_ready()
         return plan
 
-    # ----- validation ---------------------------------------------------
-
     def validate(self) -> None:
-        """Raise ValueError on unknown deps or cycles among step nodes."""
         step_ids = {n.id for n in self.nodes.values() if n.kind == "step"}
         for n in self.nodes.values():
             if n.kind != "step":
@@ -144,7 +135,6 @@ class HierarchicalPlan:
             unknown = set(n.depends_on) - step_ids
             if unknown:
                 raise ValueError(f"step '{n.id}' depends on unknown step(s): {sorted(unknown)}")
-        # Cycle detection
         graph = {n.id: set(n.depends_on) for n in self.nodes.values() if n.kind == "step"}
         visiting: set[str] = set()
         visited: set[str] = set()
@@ -163,8 +153,6 @@ class HierarchicalPlan:
         for sid in graph:
             visit(sid)
 
-    # ----- status / advancement -----------------------------------------
-
     def _deps_satisfied(self, node: PlanNode) -> bool:
         for dep in node.depends_on:
             d = self.nodes.get(dep)
@@ -180,7 +168,6 @@ class HierarchicalPlan:
                 continue
             n.status = "ready" if self._deps_satisfied(n) else "pending"
 
-        # Roll up subgoal / goal status
         for n in self.nodes.values():
             if n.kind != "subgoal":
                 continue
@@ -255,10 +242,7 @@ class HierarchicalPlan:
             counts[n.status] = counts.get(n.status, 0) + 1
         return counts
 
-    # ----- presentation -------------------------------------------------
-
     def to_context_block(self, *, max_chars: int = 3000) -> str:
-        """Compact hierarchical view for the model context window."""
         lines = [f"# Plan: {self.goal or '(untitled)'}"]
         prog = self.progress()
         lines.append(
@@ -272,7 +256,6 @@ class HierarchicalPlan:
 
         subgoals = [n for n in self.nodes.values() if n.kind == "subgoal"]
         if not subgoals:
-            # Flat listing
             for n in self.nodes.values():
                 if n.kind != "step":
                     continue
@@ -294,11 +277,9 @@ class HierarchicalPlan:
         if ready:
             lines.append("Next ready steps: " + ", ".join(r.id for r in ready[:8]))
 
-        text = "\n".join(lines)
-        return text[:max_chars]
+        return "\n".join(lines)[:max_chars]
 
     def to_todo_md(self) -> str:
-        """Render a todo.md-style checklist from the hierarchy."""
         lines = [f"# {self.goal or 'Plan'}", ""]
         for n in self.nodes.values():
             if n.kind != "step":
