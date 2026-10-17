@@ -11,6 +11,7 @@ import structlog
 
 from app.runtime.browser.operator import BrowserOperator, BROWSER_TOOL_PARAMETERS
 from app.runtime.browser.protocol import ActionRequest, ActionTarget
+from app.runtime.browser.quality import enrich_action_result, enrich_observe_result
 from app.runtime.tools import ToolSpec
 
 logger = structlog.get_logger("onsite48.runtime.browser.tools")
@@ -72,9 +73,11 @@ async def execute_browser_action(
     )
     if action == "observe":
         obs = await op.observe(include_screenshot=include_screenshot)
-        return {"ok": True, "action": "observe", "observation": obs.to_dict()}
+        # Phase 5: quality score + compact element set for the model.
+        return enrich_observe_result(obs)
     receipt = await op.act(req)
-    return receipt.to_dict()
+    # Phase 5: classify receipt for retry/reobserve guidance.
+    return enrich_action_result(receipt)
 
 
 def make_browser_tool_spec(get_page) -> ToolSpec:
@@ -82,6 +85,7 @@ def make_browser_tool_spec(get_page) -> ToolSpec:
 
     async def _execute(**kwargs: Any) -> dict[str, Any]:
         from app.services.execution_identity import get_execution_identity
+
         ident = get_execution_identity()
         thread_id = getattr(ident, "task_thread_id", None) or "default"
         page = await get_page(thread_id)
