@@ -46,6 +46,7 @@ class ClaimedTask:
     prompt: str
     attempt: int
     lease_token: str
+    research_depth: str | None = None
 
 
 def _now(now: datetime | None) -> datetime:
@@ -154,6 +155,10 @@ async def claim_task(
                 task.lease_expires_at = moment + timedelta(seconds=CLAIM_LEASE_SECONDS)
                 task.attempt_count = int(task.attempt_count or 0) + 1
                 task.lease_token = uuid.uuid4().hex
+                meta = dict(task.execution_metadata or {})
+                depth = meta.get("research_depth")
+                if depth not in ("quick", "standard", "deep"):
+                    depth = None
                 claimed.append(
                     ClaimedTask(
                         id=task.id,
@@ -163,6 +168,7 @@ async def claim_task(
                         prompt=task.prompt,
                         attempt=task.attempt_count,
                         lease_token=task.lease_token,
+                        research_depth=depth,
                     )
                 )
 
