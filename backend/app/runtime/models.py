@@ -7,6 +7,8 @@ import structlog
 
 logger = structlog.get_logger("onsite48.runtime.models")
 
+MODEL_CALL_HARD_TIMEOUT_S = float(os.environ.get("MODEL_CALL_HARD_TIMEOUT_S", "300"))
+
 # Optional injected router (set by loop context / tests)
 _injected_router: Any = None
 
@@ -99,6 +101,34 @@ def _resolve_router(explicit: Any = None) -> Any:
 
 
 async def complete(
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]] | None = None,
+    *,
+    role: str = "loop",
+    tool_choice: str = "auto",
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    model_override: str | None = None,
+    model: str | None = None,
+    model_router: Any = None,
+) -> CompleteResult:
+    import asyncio as _asyncio
+    try:
+        return await _asyncio.wait_for(
+            _complete_impl(
+                messages, tools, role=role, tool_choice=tool_choice,
+                temperature=temperature, max_tokens=max_tokens,
+                model_override=model_override, model=model, model_router=model_router,
+            ),
+            timeout=MODEL_CALL_HARD_TIMEOUT_S,
+        )
+    except _asyncio.TimeoutError as exc:
+        raise RuntimeError(
+            f"Model call exceeded hard timeout of {MODEL_CALL_HARD_TIMEOUT_S:.0f}s"
+        ) from exc
+
+
+async def _complete_impl(
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]] | None = None,
     *,
