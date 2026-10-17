@@ -11,10 +11,35 @@ Taxonomy (fixed):
 from __future__ import annotations
 
 import json
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Callable
+
+# Allow browser.quality import without full structlog install (CI/unit sandbox).
+if "structlog" not in sys.modules:
+    _m = ModuleType("structlog")
+
+    class _L:
+        def info(self, *a, **k):
+            pass
+
+        def warning(self, *a, **k):
+            pass
+
+        def error(self, *a, **k):
+            pass
+
+        def debug(self, *a, **k):
+            pass
+
+        def bind(self, **k):
+            return self
+
+    _m.get_logger = lambda *a, **k: _L()
+    sys.modules["structlog"] = _m
 
 FAILURE_TAGS = (
     "plan_error",
@@ -30,7 +55,7 @@ FAILURE_TAGS = (
 class EvalTask:
     id: str
     prompt: str
-    depth: str  # quick | standard | deep
+    depth: str
     check: Callable[[dict[str, Any]], bool]
     tags: list[str] = field(default_factory=list)
 
@@ -38,20 +63,25 @@ class EvalTask:
 def _check_observation_ok(result: dict[str, Any]) -> bool:
     from app.runtime.observation import observe_tool_result
 
-    obs = observe_tool_result(tool="web_search", call_id="t1", result=result.get("tool_result") or {"ok": True})
+    obs = observe_tool_result(
+        tool="web_search", call_id="t1", result=result.get("tool_result") or {"ok": True}
+    )
     return obs.outcome == "ok" and bool(obs.fingerprint)
 
 
 def _check_plan_dag(result: dict[str, Any]) -> bool:
     from app.runtime.hierarchical_plan import HierarchicalPlan
 
-    plan = HierarchicalPlan.from_payload(result.get("plan_payload") or {
-        "goal": "test",
-        "plan": [
-            {"step_id": "s1", "description": "A"},
-            {"step_id": "s2", "description": "B", "depends_on": ["s1"]},
-        ],
-    })
+    plan = HierarchicalPlan.from_payload(
+        result.get("plan_payload")
+        or {
+            "goal": "test",
+            "plan": [
+                {"step_id": "s1", "description": "A"},
+                {"step_id": "s2", "description": "B", "depends_on": ["s1"]},
+            ],
+        }
+    )
     return len(plan.ready_steps()) == 1 and plan.ready_steps()[0].id == "s1"
 
 
@@ -68,11 +98,19 @@ def _check_claim_grounding(result: dict[str, Any]) -> bool:
     from app.runtime.claim_grounding import ground_claims
 
     report = ground_claims(
-        result.get("summary") or "Acme pricing is 49 dollars per month on the pricing page documented fully.",
-        journal_events=result.get("events") or [{
-            "type": "tool_call_result",
-            "payload": {"result": {"snippet": "Acme pricing is 49 dollars per month on the pricing page documented fully"}},
-        }],
+        result.get("summary")
+        or "Acme pricing is 49 dollars per month on the pricing page documented fully.",
+        journal_events=result.get("events")
+        or [
+            {
+                "type": "tool_call_result",
+                "payload": {
+                    "result": {
+                        "snippet": "Acme pricing is 49 dollars per month on the pricing page documented fully"
+                    }
+                },
+            }
+        ],
     )
     return report.verdict == "pass"
 
@@ -81,7 +119,7 @@ def _check_sandbox_denies_sudo(result: dict[str, Any]) -> bool:
     from app.runtime.sandbox_policy import check_command
 
     d = check_command("sudo id")
-    return d.allowed is False and d.error_code in ("privilege_escalation", "sudo") or not d.allowed
+    return not d.allowed
 
 
 def _check_strategy_lane(result: dict[str, Any]) -> bool:
@@ -97,11 +135,16 @@ def _check_memory_distill(result: dict[str, Any]) -> bool:
     out = distill_run(
         run_id="eval1",
         goal="Research Acme pricing and always prefer primary sources",
-        finish_summary="- Acme pricing starts at 49 dollars per month on the official site.\n- Prefer primary sources when available.",
-        journal_events=[{
-            "type": "tool_call_result",
-            "payload": {"name": "web_search", "result": {"ok": True, "snippet": "Acme pricing 49"}},
-        }],
+        finish_summary=(
+            "- Acme pricing starts at 49 dollars per month on the official site.\n"
+            "- Prefer primary sources when available."
+        ),
+        journal_events=[
+            {
+                "type": "tool_call_result",
+                "payload": {"name": "web_search", "result": {"ok": True, "snippet": "Acme pricing 49"}},
+            }
+        ],
     )
     return out.count >= 1 and any(r.kind in ("fact", "preference") for r in out.records)
 
@@ -109,28 +152,47 @@ def _check_memory_distill(result: dict[str, Any]) -> bool:
 def _check_artifacts_manifest(result: dict[str, Any]) -> bool:
     import tempfile
     from pathlib import Path
+
     from app.runtime.artifacts import collect_workspace_artifacts
 
     with tempfile.TemporaryDirectory() as td:
         p = Path(td) / "out.txt"
         p.write_text("hello artifact", encoding="utf-8")
         m = collect_workspace_artifacts(td, run_id="r1", goal="g")
-        return m.count >= 1 and m.items[0].sha256
+        return m.count >= 1 and bool(m.items[0].sha256)
 
 
 def _check_browser_quality(result: dict[str, Any]) -> bool:
     from app.runtime.browser.quality import score_observation
 
-    q = score_observation({
-        "url": "https://example.com",
-        "title": "Example",
-        "elements": [
-            {"ref": "e1", "role": "button", "name": "Go", "tag": "button"},
-            {"ref": "e2", "role": "link", "name": "Home", "tag": "a"},
-            {"ref": "e3", "role": "textbox", "name": "Q", "tag": "input"},
-        ],
-    })
+    q = score_observation(
+        {
+            "url": "https://example.com",
+            "title": "Example",
+            "elements": [
+                {"ref": "e1", "role": "button", "name": "Go", "tag": "button"},
+                {"ref": "e2", "role": "link", "name": "Home", "tag": "a"},
+                {"ref": "e3", "role": "textbox", "name": "Q", "tag": "input"},
+            ],
+        }
+    )
     return q.score >= 0.4 and not q.is_low_quality
+
+
+def _check_ungrounded_fails(result: dict[str, Any]) -> bool:
+    from app.runtime.claim_grounding import ground_claims
+
+    report = ground_claims(
+        "Revenue grew 99 percent exclusively from secret intuition without any source.",
+        journal_events=[
+            {
+                "type": "tool_call_result",
+                "payload": {"result": {"snippet": "weather is fine today"}},
+            }
+        ],
+        min_coverage=0.9,
+    )
+    return report.verdict == "fail"
 
 
 EVAL_TASKS: list[EvalTask] = [
@@ -143,11 +205,7 @@ EVAL_TASKS: list[EvalTask] = [
     EvalTask("mem-001", "Memory distiller extracts facts", "standard", _check_memory_distill, ["memory"]),
     EvalTask("art-001", "Artifact manifest collects workspace files", "quick", _check_artifacts_manifest, ["artifacts"]),
     EvalTask("brq-001", "Browser quality scores interactive page", "quick", _check_browser_quality, ["browser"]),
-    EvalTask("claim-002", "Ungrounded numeric claim fails", "standard", lambda r: __import__("app.runtime.claim_grounding", fromlist=["ground_claims"]).ground_claims(
-        "Revenue grew 99 percent exclusively from secret intuition without any source.",
-        journal_events=[{"type": "tool_call_result", "payload": {"result": {"snippet": "weather is fine today"}}}],
-        min_coverage=0.9,
-    ).verdict == "fail", ["verifier"]),
+    EvalTask("claim-002", "Ungrounded numeric claim fails", "standard", _check_ungrounded_fails, ["verifier"]),
 ]
 
 
@@ -162,15 +220,17 @@ class EvalRow:
     tags: list[str]
 
     def to_json(self) -> str:
-        return json.dumps({
-            "id": self.id,
-            "pass": self.pass_,
-            "failure_tag": self.failure_tag,
-            "duration_s": round(self.duration_s, 4),
-            "cost_usd": self.cost_usd,
-            "steps": self.steps,
-            "tags": self.tags,
-        })
+        return json.dumps(
+            {
+                "id": self.id,
+                "pass": self.pass_,
+                "failure_tag": self.failure_tag,
+                "duration_s": round(self.duration_s, 4),
+                "cost_usd": self.cost_usd,
+                "steps": self.steps,
+                "tags": self.tags,
+            }
+        )
 
 
 def _tag_failure(task: EvalTask, exc: BaseException | None) -> str:
@@ -195,7 +255,6 @@ def run_flywheel(
     *,
     out_path: str | Path | None = None,
 ) -> list[EvalRow]:
-    """Execute tasks offline; optionally write JSONL."""
     tasks = tasks or EVAL_TASKS
     rows: list[EvalRow] = []
     for task in tasks:
@@ -208,16 +267,17 @@ def run_flywheel(
             exc = e
             ok = False
         dt = time.perf_counter() - t0
-        row = EvalRow(
-            id=task.id,
-            pass_=ok,
-            failure_tag=None if ok else _tag_failure(task, exc),
-            duration_s=dt,
-            cost_usd=0.0,
-            steps=1,
-            tags=list(task.tags),
+        rows.append(
+            EvalRow(
+                id=task.id,
+                pass_=ok,
+                failure_tag=None if ok else _tag_failure(task, exc),
+                duration_s=dt,
+                cost_usd=0.0,
+                steps=1,
+                tags=list(task.tags),
+            )
         )
-        rows.append(row)
 
     if out_path:
         path = Path(out_path)
@@ -236,10 +296,7 @@ def summarize(rows: list[EvalRow]) -> dict[str, Any]:
         "passed": passed,
         "pass_rate": (passed / total) if total else 0.0,
         "infra_failures": infra_fail,
-        "by_tag": {
-            tag: sum(1 for r in rows if r.failure_tag == tag)
-            for tag in FAILURE_TAGS
-        },
+        "by_tag": {tag: sum(1 for r in rows if r.failure_tag == tag) for tag in FAILURE_TAGS},
     }
 
 
