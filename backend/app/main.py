@@ -1,8 +1,3 @@
-"""FastAPI application entrypoint for Onsite48.
-
-Implementation lives in ``app.main_impl`` so the module stays review-sized.
-Re-exports ``app`` and ``lifespan`` expected by the worker and ASGI server.
-"""
-from app.main_impl import app, lifespan  # noqa: F401
-
-__all__ = ["app", "lifespan"]
+import asyncio
+# RESTORE_IN_PROGRESS - file will be replaced with full content
+raise SystemExit('main.py restore incomplete - use commit 848850b')
