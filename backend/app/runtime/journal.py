@@ -26,18 +26,15 @@ def utcnow() -> datetime:
 
 
 def _auto_summary(tool_name: str, result: Any) -> str:
-    """Generate a 1-2 sentence summary from a tool result."""
     if isinstance(result, dict):
         if result.get("error") or result.get("error_code"):
             return f"{tool_name} failed: {str(result.get('error', result.get('error_code', '')))[:200]}"
         if result.get("ok") is False:
             return f"{tool_name} returned no results."
-        # Try common content fields
         for key in ("title", "message", "summary", "output", "text"):
             v = result.get(key)
             if isinstance(v, str) and v.strip():
                 return f"{tool_name}: {v.strip()[:300]}"
-        # Count results
         for key in ("results", "items", "data"):
             v = result.get(key)
             if isinstance(v, list):
@@ -49,7 +46,6 @@ def _auto_summary(tool_name: str, result: Any) -> str:
 
 
 def _auto_extract_urls(result: Any) -> list[str]:
-    """Extract URLs from a tool result for evidence tracking."""
     urls: list[str] = []
     if isinstance(result, dict):
         for key in ("url", "href", "link", "source_url", "url_source"):
@@ -114,13 +110,14 @@ class RunState:
     no_progress_steps: int = 0
     summarized_turns: int = 0
     tool_results: dict[str, dict[str, Any]] = field(default_factory=dict)
+    hierarchical_plan: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {"run_id": self.run_id, "goal": self.goal, "status": self.status, "seq": self.seq,
                 "step_count": self.step_count, "token_count": self.token_count, "cost_usd": self.cost_usd,
                 "todo_md": self.todo_md, "user_id": self.user_id, "task_id": self.task_id, "org_id": self.org_id,
                 "approval_pending": self.approval_pending, "finish_payload": self.finish_payload, "error": self.error,
-                "summarized_turns": self.summarized_turns}
+                "summarized_turns": self.summarized_turns, "hierarchical_plan": self.hierarchical_plan}
 
 class Journal:
     _memory: dict[str, list] = {}
@@ -154,12 +151,6 @@ class Journal:
         evidence_urls: list[str] | None = None,
         call_id: str | None = None,
     ) -> str:
-        """Store a full tool result in the journal and return a compact ref_id.
-
-        The full result is persisted as a 'tool_result' event. The caller can then
-        put a compact {"ref": ref_id, "summary": ..., "evidence_urls": [...]} in
-        the conversation messages instead of the full payload, reducing token usage.
-        """
         ref_id = f"toolres_{uuid.uuid4().hex[:12]}"
         payload = {
             "ref_id": ref_id,
@@ -174,8 +165,6 @@ class Journal:
         return ref_id
 
     async def get_tool_result(self, ref_id: str) -> dict[str, Any] | None:
-        """Retrieve a stored tool result by its ref_id from the journal."""
-        # Iterate over all runs in memory (refs are globally unique)
         for bucket in self._memory.values():
             for ev in bucket:
                 if not isinstance(ev, dict):
@@ -188,7 +177,6 @@ class Journal:
         return None
 
     def _event_to_dict(self, ev: Any) -> dict[str, Any]:
-        """Normalize ORM / memory events to a stable dict shape for callers."""
         if isinstance(ev, dict):
             et = ev.get("type") or ev.get("event_type") or ""
             return {
