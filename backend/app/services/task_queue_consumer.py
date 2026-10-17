@@ -20,6 +20,7 @@ Two properties matter more than throughput:
 from __future__ import annotations
 
 import asyncio
+import os
 from typing import Any, Awaitable, Callable
 
 import structlog
@@ -85,33 +86,63 @@ async def consume_forever(
     poll_seconds: float = DEFAULT_POLL_SECONDS,
     batch: int = 5,
     stop: asyncio.Event | None = None,
+    worker_id: str | None = None,
 ) -> None:
     """Poll until stopped. Never raises; a bad poll must not kill the consumer."""
     stop_event = stop or asyncio.Event()
     logger.info("task_queue.consumer_started", poll_seconds=poll_seconds, batch=batch)
-    while not stop_event.is_set():
-        try:
-            dispatched = await run_once(session_factory, execute, batch=batch)
-        except asyncio.CancelledError:
-            raise
-        except Exception as exc:
-            # A database blip must not end the process: a dead consumer means no
-            # queued task starts at all, which is a far worse failure than a
-            # failed poll.
-            logger.error(
-                "task_queue.poll_failed",
-                error_type=type(exc).__name__,
-                error=str(exc)[:500],
-            )
-            dispatched = 0
 
-        if dispatched:
-            # More work is probably waiting; go straight back rather than
-            # sleeping through a backlog.
-            continue
-        try:
-            await asyncio.wait_for(stop_event.wait(), timeout=poll_seconds)
-        except asyncio.TimeoutError:
-            continue
+    redis_client = None
+    redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+    try:
+        import redis.asyncio as aioredis
+
+        redis_client = aioredis.from_url(redis_url)
+    except Exception as exc:
+        logger.warning(
+            "task_queue.heartbeat_redis_unavailable",
+            error=str(exc)[:200],
+        )
+
+    try:
+        while not stop_event.is_set():
+            # Keep the task-worker healthcheck green on every poll iteration.
+            if redis_client is not None and worker_id:
+                try:
+                    from app.services.orphan_sweeper import write_task_worker_heartbeat
+
+                    await write_task_worker_heartbeat(redis_client, worker_id)
+                except Exception:
+                    pass
+
+            try:
+                dispatched = await run_once(session_factory, execute, batch=batch)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                # A database blip must not end the process: a dead consumer means no
+                # queued task starts at all, which is a far worse failure than a
+                # failed poll.
+                logger.error(
+                    "task_queue.poll_failed",
+                    error_type=type(exc).__name__,
+                    error=str(exc)[:500],
+                )
+                dispatched = 0
+
+            if dispatched:
+                # More work is probably waiting; go straight back rather than
+                # sleeping through a backlog.
+                continue
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=poll_seconds)
+            except asyncio.TimeoutError:
+                continue
+    finally:
+        if redis_client is not None:
+            try:
+                await redis_client.close()
+            except Exception:
+                pass
 
     logger.info("task_queue.consumer_stopped")
