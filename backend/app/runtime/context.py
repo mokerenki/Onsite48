@@ -7,6 +7,7 @@ from typing import Any
 
 import structlog
 
+from app.runtime.context_engine import ContextEngine, DEFAULT_BUDGET_TOKENS
 from app.runtime.hierarchical_plan import HierarchicalPlan
 from app.runtime.journal import Journal, RunState
 from app.runtime.observation import ObservationTracker, format_observation_message, observe_tool_result
@@ -63,6 +64,8 @@ class ContextBuilder:
         budget_chars: int = DEFAULT_CONTEXT_BUDGET_CHARS,
         workspace: Path | None = None,
         journal: Journal | None = None,
+        budget_tokens: int | None = None,
+        recent_messages: int | None = None,
     ):
         self.system_prompt = system_prompt or load_system_prompt()
         self.budget_chars = budget_chars
@@ -70,9 +73,18 @@ class ContextBuilder:
         self.journal = journal
         # Phase 1: per-run observation tracker for no-progress detection.
         self.observation_tracker = ObservationTracker()
+        # Phase 3: budgeted context engine.
+        tokens = budget_tokens
+        if tokens is None:
+            # Derive from char budget when not explicit (≈4 chars/token).
+            tokens = max(2000, int(budget_chars // 4)) if budget_chars else DEFAULT_BUDGET_TOKENS
+        self.engine = ContextEngine(
+            budget_tokens=tokens,
+            recent_messages=recent_messages if recent_messages is not None else 12,
+        )
+        self.last_pack_diagnostics: dict[str, Any] | None = None
 
     def build(self, state: RunState, specs: dict[str, ToolSpec]) -> list[dict[str, Any]]:
-        messages: list[dict[str, Any]] = []
         tool_names = ", ".join(sorted(specs.keys()))
         skill_block = ""
         try:
@@ -94,26 +106,27 @@ class ContextBuilder:
                 )
         except Exception:
             skill_block = ""
-        messages.append(
-            {
-                "role": "system",
-                "content": f"{self.system_prompt}\n\nAvailable tools (alphabetical): {tool_names}\n{skill_block}",
-            }
-        )
-        messages.append({"role": "user", "content": f"Goal:\n{state.goal}"})
-        for msg in state.messages:
-            messages.append(msg)
-        # Phase 2: hierarchical plan context (preferred over raw todo when present).
+
+        system = f"{self.system_prompt}\n\nAvailable tools (alphabetical): {tool_names}\n{skill_block}"
         plan_block = self._hierarchical_plan_block(state)
-        if plan_block:
-            messages.append({"role": "user", "content": plan_block})
-        todo = self._read_todo(state)
-        if todo and not plan_block:
-            messages.append({"role": "user", "content": f"Current todo.md:\n```\n{todo}\n```"})
-        total = sum(len(str(m.get("content") or "")) for m in messages)
-        if total > self.budget_chars:
-            messages = self._compact(messages, state)
-        return messages
+        if not plan_block:
+            todo = self._read_todo(state)
+            if todo:
+                plan_block = f"Current todo.md:\n```\n{todo}\n```"
+
+        pack = self.engine.pack(
+            system=system,
+            goal=state.goal or "",
+            history=list(state.messages or []),
+            plan_block=plan_block,
+        )
+        self.last_pack_diagnostics = pack.to_diagnostics()
+        if pack.compacted:
+            logger.info(
+                "runtime.context.engine_packed",
+                **pack.to_diagnostics(),
+            )
+        return pack.messages
 
     def _read_todo(self, state: RunState) -> str:
         if state.todo_md:
@@ -146,6 +159,7 @@ class ContextBuilder:
             return ""
 
     def _compact(self, messages: list[dict[str, Any]], state: RunState) -> list[dict[str, Any]]:
+        """Legacy char-budget compact — kept for callers; prefer ContextEngine."""
         if len(messages) <= 3:
             return messages
         head, tail, budget = messages[:2], [], COMPACTION_TARGET_CHARS
