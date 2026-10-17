@@ -292,6 +292,7 @@ def configure_memory_store(store: Any) -> None:
 
 
 def get_memory_store() -> Any:
+    global _memory_store
     if _memory_store is None:
         _memory_store = InMemoryMemoryStore()
     return _memory_store

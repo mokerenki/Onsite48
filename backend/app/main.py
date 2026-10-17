@@ -35,10 +35,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 import redis.asyncio as aioredis
-from fastapi import FastAPI, HTTPException, Request, WebSocket
+from fastapi import FastAPI, HTTPException, Request, WebSocket, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.codeact import CodeActTool
 from app.agents.router import DomainRouter
@@ -80,13 +81,13 @@ from app.core.readiness import (
     readiness_payload,
 )
 from app.core.redis_checkpointer import RedisCheckpointer
-from app.core.security import get_websocket_user
+from app.core.security import get_current_user, get_websocket_user
 from app.core.tracing import TRACE_HEADER, bind_request_trace
-from app.db import close_database, get_session_factory, initialize_database
+from app.db import close_database, get_db_session, get_session_factory, initialize_database
 from app.mcp_clients.mcp_registry import MCPRegistry
 from app.memory.cognee_setup import CogneeMemory
 from app.memory.retriever_tool import MemoryRetrieverTool
-from app.models import OrganizationMember
+from app.models import OrganizationMember, TaskStatus, User, utcnow
 from app.sandbox.persistent_manager import persistent_sandbox_manager
 from app.services.agent_computer import AgentComputerManager
 from app.services.browser_automation_service import BrowserAutomationService
@@ -100,6 +101,7 @@ from app.services.browser_session_router import BrowserSessionRouter
 from app.services.capability_catalog import register_business_capabilities
 from app.services.orphan_sweeper import start_orphan_sweeper
 from app.services.proactive_worker import ProactiveOperationsWorker
+from app.services.task_execution_control import task_execution_control
 from app.services.visual_grounding import VisualGroundingService
 from app.tools.browser_tool import BrowserTool
 from app.tools.calendar_tool import CalendarTool
@@ -543,6 +545,43 @@ app.include_router(platform_router)
 app.include_router(rbac_router)
 app.include_router(sandbox_router)
 app.include_router(tasks_replay_router)
+
+
+@app.post("/api/tasks/{thread_id}/cancel")
+async def cancel_task(
+    thread_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    # Verify task ownership before signaling cancel.
+    membership = await db.scalar(
+        select(OrganizationMember)
+        .where(OrganizationMember.user_id == user.id)
+        .order_by(OrganizationMember.created_at.asc())
+    )
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No workspace associated with this account.")
+    task = await db.scalar(
+        select(TaskThread).where(
+            TaskThread.external_thread_id == thread_id,
+            TaskThread.user_id == user.id,
+            TaskThread.organization_id == membership.organization_id,
+        )
+    )
+    if task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found.")
+
+    signaled = await task_execution_control.signal_cancel(thread_id)
+
+    # Mark the task cancelled durably so reconnects/retries see a terminal row.
+    task.status = TaskStatus.CANCELLED
+    task.completed_at = utcnow()
+    db.add(task)
+    await db.commit()
+
+    return {"cancelled": True, "signaled": signaled, "thread_id": thread_id}
+
+
 # WebSocket endpoint
 @app.websocket("/ws/bridge")
 async def bridge_websocket_route(websocket: WebSocket):
