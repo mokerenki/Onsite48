@@ -3,12 +3,6 @@
 Turns a finished run (goal + journal + finish summary) into durable memory
 records the agent can retrieve later. Deterministic extraction — no LLM
 required for the core path.
-
-Memory kinds:
-  - fact: grounded statements with optional source URLs
-  - procedure: successful tool sequences worth repeating
-  - preference: user-stated constraints from the goal
-  - open_question: unresolved items from verifier / finish notes
 """
 from __future__ import annotations
 
@@ -20,7 +14,7 @@ from typing import Any, Literal
 
 MemoryKind = Literal["fact", "procedure", "preference", "open_question"]
 
-_URL_RE = re.compile(r"https?://[^\s)\]>\"']+", re.I)
+_URL_RE = re.compile(r'https?://[^\s)\]>\"']+', re.I)
 
 
 @dataclass
@@ -44,6 +38,10 @@ class DistillResult:
     goal: str
     records: list[MemoryRecord]
     skipped: int = 0
+
+    @property
+    def count(self) -> int:
+        return len(self.records)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -74,7 +72,6 @@ def distill_run(
     verifier: dict[str, Any] | None = None,
     max_records: int = 20,
 ) -> DistillResult:
-    """Extract durable memories from a completed run."""
     records: list[MemoryRecord] = []
     skipped = 0
     seen: set[str] = set()
@@ -102,7 +99,6 @@ def distill_run(
             )
         )
 
-    # Preferences from goal phrasing
     g = (goal or "").lower()
     for phrase, tag in (
         ("must not", "constraint"),
@@ -115,13 +111,11 @@ def distill_run(
             _add("preference", goal[:400], tags=[tag, "from_goal"], confidence=0.7)
             break
 
-    # Facts from finish summary lines
     for line in (finish_summary or "").splitlines():
         line = line.strip(" -*\t")
         if len(line) >= 30 and not line.endswith("?"):
             _add("fact", line, urls=_urls_in(line), tags=["finish_summary"], confidence=0.6)
 
-    # Procedures: consecutive successful tool names
     tool_seq: list[str] = []
     for ev in journal_events or []:
         if not isinstance(ev, dict):
@@ -138,14 +132,8 @@ def distill_run(
                 tool_seq.append(name)
     if len(tool_seq) >= 2:
         seq = " → ".join(tool_seq[:8])
-        _add(
-            "procedure",
-            f"Successful tool sequence for goal: {seq}",
-            tags=["tool_sequence"],
-            confidence=0.55,
-        )
+        _add("procedure", f"Successful tool sequence for goal: {seq}", tags=["tool_sequence"], confidence=0.55)
 
-    # Facts from key results snippets
     for kr in key_results or []:
         if not isinstance(kr, dict):
             continue
@@ -153,24 +141,16 @@ def distill_run(
         if len(snippet) >= 30:
             _add("fact", snippet, urls=_urls_in(str(kr)), tags=["key_result"], confidence=0.55)
 
-    # Open questions from verifier
     if isinstance(verifier, dict):
         for m in list(verifier.get("missing_evidence") or [])[:5]:
             _add("open_question", f"Missing evidence: {m}", tags=["verifier"], confidence=0.8)
         for u in list(verifier.get("unmet_requirements") or [])[:5]:
             _add("open_question", f"Unmet: {u}", tags=["verifier"], confidence=0.8)
 
-    return DistillResult(
-        run_id=run_id,
-        goal=goal or "",
-        records=records[:max_records],
-        skipped=skipped,
-    )
+    return DistillResult(run_id=run_id, goal=goal or "", records=records[:max_records], skipped=skipped)
 
 
 class InMemoryMemoryStore:
-    """Process-local store for tests and single-worker demos."""
-
     def __init__(self) -> None:
         self._by_id: dict[str, MemoryRecord] = {}
         self._by_run: dict[str, list[str]] = {}
@@ -188,10 +168,7 @@ class InMemoryMemoryStore:
         scored: list[tuple[float, MemoryRecord]] = []
         for r in self._by_id.values():
             tokens = {t for t in re.findall(r"[a-z0-9]{3,}", r.text.lower())}
-            if not q:
-                score = 0.0
-            else:
-                score = len(q & tokens) / max(1, len(q))
+            score = (len(q & tokens) / max(1, len(q))) if q else 0.0
             if score > 0:
                 scored.append((score * r.confidence, r))
         scored.sort(key=lambda x: -x[0])
@@ -201,9 +178,4 @@ class InMemoryMemoryStore:
         return [self._by_id[i] for i in self._by_run.get(run_id, []) if i in self._by_id]
 
 
-__all__ = [
-    "MemoryRecord",
-    "DistillResult",
-    "distill_run",
-    "InMemoryMemoryStore",
-]
+__all__ = ["MemoryRecord", "DistillResult", "distill_run", "InMemoryMemoryStore"]
