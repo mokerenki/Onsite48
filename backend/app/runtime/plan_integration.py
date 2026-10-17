@@ -8,7 +8,7 @@ import os
 import re
 from typing import Any
 
-from app.runtime.hierarchical_plan import HierarchicalPlan
+from app.runtime.hierarchical_plan import HierarchicalPlan, PlanNode
 
 
 def plan_integration_enabled() -> bool:
@@ -47,7 +47,6 @@ def should_bootstrap_plan(
     )
     if any(s in low for s in multi_signals):
         return True
-    # Long goals are usually multi-step
     return len(g) >= 80
 
 
@@ -86,12 +85,10 @@ def bootstrap_plan(
     research_depth: str | None = None,
     existing: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
-    """Return plan dict or None if bootstrap skipped."""
     if existing:
-        try:
-            return HierarchicalPlan.from_payload(existing).to_dict()
-        except Exception:
-            pass
+        loaded = load_plan(existing)
+        if loaded is not None:
+            return loaded.to_dict()
     if not should_bootstrap_plan(goal, research_depth=research_depth):
         return None
     plan = HierarchicalPlan.from_flat_steps(goal, _default_steps_for_goal(goal))
@@ -102,6 +99,31 @@ def load_plan(payload: dict[str, Any] | None) -> HierarchicalPlan | None:
     if not payload:
         return None
     try:
+        nodes = payload.get("nodes")
+        if isinstance(nodes, dict) and nodes:
+            plan = HierarchicalPlan(
+                goal=str(payload.get("goal") or ""),
+                success_conditions=[str(s) for s in (payload.get("success_conditions") or []) if s],
+                version=int(payload.get("version") or 1),
+            )
+            for nid, raw in nodes.items():
+                if not isinstance(raw, dict):
+                    continue
+                plan.nodes[str(nid)] = PlanNode(
+                    id=str(raw.get("id") or nid),
+                    kind=raw.get("kind") or "step",  # type: ignore[arg-type]
+                    description=str(raw.get("description") or nid),
+                    parent_id=raw.get("parent_id"),
+                    depends_on=[str(d) for d in (raw.get("depends_on") or []) if d],
+                    status=raw.get("status") or "pending",  # type: ignore[arg-type]
+                    tool_name=raw.get("tool_name"),
+                    tool_args=dict(raw.get("tool_args") or {}),
+                    expected_outcome=raw.get("expected_outcome"),
+                    success_condition=raw.get("success_condition"),
+                    notes=str(raw.get("notes") or ""),
+                )
+            plan._refresh_ready()
+            return plan
         return HierarchicalPlan.from_payload(payload)
     except Exception:
         return None
@@ -114,7 +136,6 @@ def advance_plan_on_tool(
     ok: bool,
     result_summary: str = "",
 ) -> dict[str, Any] | None:
-    """Conservatively mark one ready step done/failed based on tool success."""
     plan = load_plan(plan_payload)
     if plan is None:
         return plan_payload
@@ -124,7 +145,6 @@ def advance_plan_on_tool(
 
     tool = (tool_name or "").lower()
     summary = (result_summary or "").lower()
-    # Prefer step whose description overlaps tool or summary tokens
     tool_tokens = set(re.findall(r"[a-z0-9]{3,}", tool))
     summary_tokens = set(re.findall(r"[a-z0-9]{3,}", summary))
 
@@ -165,7 +185,6 @@ def finish_should_retry_for_plan(
     finish_attempts: int,
     max_attempts: int = 2,
 ) -> tuple[bool, list[dict[str, str]]]:
-    """True if finish should be rejected once due to open plan steps."""
     if not plan_integration_enabled():
         return False, []
     open_steps = open_critical_steps(plan_payload)
