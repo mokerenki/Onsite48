@@ -67,6 +67,9 @@ import {
 import { SupportIds } from './SupportIds';
 import ManusHome from './ManusHome';
 import { looksLikeBrowserTask } from '../lib/taskIntent';
+import { useTaskWatchdog, isTaskProgressEventType } from '../hooks/useTaskWatchdog';
+import { messageForTaskErrorCode, formatTraceHint } from '../lib/taskErrorCatalog';
+import { DEFAULT_RESEARCH_DEPTH, type ResearchDepth, withResearchDepth } from '../lib/researchDepth';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -283,27 +286,44 @@ function structuredErrorDisplay(input: {
   errorCode?: string | null;
   message?: string | null;
   toolName?: string | null;
+  traceId?: string | null;
 }): { title: string; detail: string; isToolError: boolean } {
   const code = (input.errorCode || "").toLowerCase();
+  const catalog = messageForTaskErrorCode(input.errorCode, input.message);
   const message = (input.message || "").trim();
-  if (code.includes("rate_limit")) {
-    return { title: "Model rate limit hit", detail: message || "Model rate limit hit. Retry in 30s.", isToolError: false };
+  const trace = formatTraceHint(input.traceId);
+  const withTrace = (detail: string) => (trace ? `${detail} (trace: ${trace})` : detail);
+
+  if (code === "execution_timeout" || (code.includes("timeout") && !code.includes("websocket"))) {
+    return { title: "Task timed out", detail: withTrace(catalog), isToolError: false };
   }
-  if (code.includes("timeout")) {
-    return { title: "Task timed out", detail: message || "The task exceeded its execution time limit. Retry with a narrower request.", isToolError: false };
+  if (code === "worker_execution_failed") {
+    return { title: "Worker failed", detail: withTrace(catalog), isToolError: false };
+  }
+  if (code === "websocket_disconnected" || code === "websocket_closed") {
+    return { title: "Connection lost", detail: withTrace(catalog), isToolError: false };
+  }
+  if (code === "model_configuration_error" || code === "model_error") {
+    return { title: "Model error", detail: withTrace(catalog), isToolError: false };
+  }
+  if (code === "resume_checkpoint_missing" || code === "task_context_missing") {
+    return { title: "Cannot resume", detail: withTrace(catalog), isToolError: false };
+  }
+  if (code.includes("rate_limit")) {
+    return { title: "Model rate limit hit", detail: withTrace(message || catalog), isToolError: false };
   }
   if (code.includes("auth") && (code.includes("expired") || code.includes("missing") || code.includes("refresh") || code.includes("reconnect"))) {
-    return { title: "Session expired", detail: "Session expired. Please re-authenticate.", isToolError: false };
+    return { title: "Session expired", detail: withTrace("Session expired. Please re-authenticate."), isToolError: false };
   }
   if (code.includes("tool") && (code.includes("fail") || code.includes("error"))) {
     const tool = input.toolName || "tool";
     return {
       title: `Tool ${tool} failed`,
-      detail: `Tool ${tool} failed: ${message || "unexpected error"}. Retry?`,
+      detail: withTrace(`Tool ${tool} failed: ${message || "unexpected error"}. Retry?`),
       isToolError: true,
     };
   }
-  return { title: "Task failed", detail: message || "This task could not be completed.", isToolError: false };
+  return { title: "Task failed", detail: withTrace(catalog), isToolError: false };
 }
 
 // Tool errors name the failing tool in their message ("The
@@ -354,6 +374,12 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
   const [finalAnswer, setFinalAnswer] = useState<string | null>(null);
   const [streamingAnswer, setStreamingAnswer] = useState("");
   const [responseMode, setResponseMode] = useState<"quick" | "web_research" | "autonomous" | null>(null);
+  const [researchDepth, setResearchDepth] = useState<ResearchDepth>(DEFAULT_RESEARCH_DEPTH);
+  const [appliedDepth, setAppliedDepth] = useState<string | null>(null);
+  const [taskEventSeq, setTaskEventSeq] = useState(0);
+  const [silenceNotice, setSilenceNotice] = useState(false);
+  const [connectionLostTerminal, setConnectionLostTerminal] = useState(false);
+  const [timelineNotes, setTimelineNotes] = useState<Array<{ id: string; kind: string; text: string; tone?: string }>>([]);
   const [reportArtifact, setReportArtifact] = useState<ReportArtifact | null>(null);
   const [websiteArtifact, setWebsiteArtifact] = useState<ReportArtifact | null>(null);
   const [websitePreview, setWebsitePreview] = useState<{ preview_id: string; preview_url: string; project_name: string; expires_at?: number } | null>(null);
@@ -376,6 +402,16 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
   const [showConversationNavigator, setShowConversationNavigator] = useState(false);
   const [activeTurnId, setActiveTurnId] = useState<string | null>(null);
   const [showJumpLatest, setShowJumpLatest] = useState(false);
+
+  const watchdog = useTaskWatchdog({
+    active: loading && currentStatus === "running",
+    lastTaskEventType: null,
+    taskEventSeq,
+    onSilent: () => setSilenceNotice(true),
+  });
+  useEffect(() => {
+    if (watchdog.silenceNotice) setSilenceNotice(true);
+  }, [watchdog.silenceNotice]);
 
   const [pendingConfirmation, setPendingConfirmation] = useState<{
     task_id: string;
@@ -713,6 +749,12 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(functi
         }
       }
 
+      if (isTaskProgressEventType(data.type)) {
+        setTaskEventSeq((n) => n + 1);
+        setSilenceNotice(false);
+        setConnectionLostTerminal(false);
+      }
+
       switch (data.type) {
         case "task_start": {
           acceptsTaskEventsRef.current = true;
@@ -968,6 +1010,7 @@ if (data.state) {
           break;
         }
         case "task_complete": {
+          if (data.trace_id || traceId) console.info("onsite48.trace", data.trace_id || traceId);
           setCurrentStatus((narrowTaskStatus(data.status) ?? "completed") as CurrentStatus);
           setShowPlanDetails(false);
           if (data.thread_id) {
@@ -1010,7 +1053,7 @@ if (data.state) {
               return next;
             });
           }
-          setErrorMessage(data.message || data.error || "This task failed before it could be completed.");
+          setErrorMessage(structuredErrorDisplay({ errorCode: data.error_code, message: data.message || data.error, traceId: data.trace_id || traceId }).detail);
           setErrorId(data.error_id || null);
           setErrorCode(data.error_code || null);
           setErrorSuggestion(data.suggestion || null);
@@ -1034,8 +1077,56 @@ if (data.state) {
           isPausedRef.current = false;
           break;
         }
-        default:
+        case "mode_applied": {
+          const depth = typeof data.research_depth === "string" ? data.research_depth : null;
+          if (depth) setAppliedDepth(depth);
           break;
+        }
+        case "step_retry": {
+          const n = data.step_index;
+          const attempt = data.attempt;
+          const reason = data.reason || data.message || "";
+          setTimelineNotes((prev) => [...prev, {
+            id: `retry-${Date.now()}-${prev.length}`,
+            kind: "step_retry",
+            text: `Retrying step ${n ?? "?"} (attempt ${attempt ?? "?"}) — ${reason}`,
+            tone: "accent",
+          }]);
+          break;
+        }
+        case "step_assessment": {
+          const verdict = (data.verdict || "unknown").toString();
+          const reason = data.reason || data.message || "";
+          const tone = verdict === "failed" ? "error" : verdict === "partial" ? "warning" : verdict === "achieved" ? "neutral" : "muted";
+          setTimelineNotes((prev) => [...prev, {
+            id: `assess-${Date.now()}-${prev.length}`,
+            kind: "step_assessment",
+            text: `Step ${data.step_index ?? "?"}: ${verdict}${reason ? ` — ${reason}` : ""}`,
+            tone,
+          }]);
+          break;
+        }
+        case "plan_revised": {
+          const reason = data.reason || "plan changed";
+          setTimelineNotes((prev) => [...prev, {
+            id: `planrev-${Date.now()}-${prev.length}`,
+            kind: "plan_revised",
+            text: `Plan updated — ${reason}`,
+            tone: "muted",
+          }]);
+          break;
+        }
+        default: {
+          if (data.type && data.type !== "pong") {
+            setTimelineNotes((prev) => [...prev.slice(-40), {
+              id: `unk-${Date.now()}-${prev.length}`,
+              kind: "unknown",
+              text: data.message || data.type,
+              tone: "muted",
+            }]);
+          }
+          break;
+        }
       }
     };
 
@@ -1517,6 +1608,7 @@ if (data.state) {
         safeSocketSend({
           action: "retry_task",
           thread_id: threadId,
+          ...withResearchDepth({}, researchDepth),
         }, "The connection closed before the retry was sent. Reconnect and try again.");
         setTask("");
         return;
@@ -1553,6 +1645,7 @@ if (data.state) {
         // re-enters the graph at the clarification step.
         action: isClarificationAnswer ? "resume_task" : isFollowUp ? "continue_task" : "run_task",
         message: trimmedMessage,
+        ...withResearchDepth({}, researchDepth),
         ...(isFollowUp || isClarificationAnswer ? { thread_id: threadId } : {}),
         attachments: attachments.map((attachment) => attachment.id),
         ...(taskBrowserSession ? {
@@ -1613,7 +1706,7 @@ if (data.state) {
       setCurrentStatus("connecting");
       setLoading(true);
       setErrorMessage(null);
-      safeSocketSend({ action: "retry_task", thread_id: threadIdRef.current }, "The connection closed before the retry was sent. Reconnect and try again.");
+      safeSocketSend({ action: "retry_task", thread_id: threadIdRef.current, ...withResearchDepth({}, researchDepth) }, "The connection closed before the retry was sent. Reconnect and try again.");
     } else {
       submitTask(message);
     }
@@ -1745,7 +1838,7 @@ if (data.state) {
       setCurrentStatus("paused");
       return;
     }
-    if (!safeSocketSend({ action: "resume_task", thread_id: threadId }, "The connection closed before the task could resume. Please reconnect and try again.")) {
+    if (!safeSocketSend({ action: "resume_task", thread_id: threadId, ...withResearchDepth({}, researchDepth) }, "The connection closed before the task could resume. Please reconnect and try again.")) {
       setCurrentStatus("paused");
       return;
     }
@@ -1880,6 +1973,38 @@ if (data.state) {
   const composer = (
     <div className="relative">
       <input ref={fileInputRef} type="file" multiple className="hidden" onChange={uploadFiles} />
+      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+        {(["quick", "standard", "deep"] as const).map((depth) => (
+          <button
+            key={depth}
+            type="button"
+            onClick={() => setResearchDepth(depth)}
+            className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
+              researchDepth === depth ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+            title={`Research depth: ${depth}`}
+          >
+            {depth === "quick" ? "Quick" : depth === "standard" ? "Standard" : "Deep"}
+          </button>
+        ))}
+        {responseMode && (
+          <span className="ml-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
+            {responseMode === "autonomous" ? "Autonomous" : "Quick answer"}
+          </span>
+        )}
+        {appliedDepth && <span className="text-[11px] text-slate-400">Mode: {appliedDepth}</span>}
+      </div>
+      {silenceNotice && loading && (
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <span>Still working — no progress events for a while.</span>
+          <button type="button" className="font-medium underline" onClick={() => handleStop()}>Cancel</button>
+        </div>
+      )}
+      {connectionLostTerminal && (
+        <div className="mb-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
+          Connection lost before this task finished. Nothing was left half-done — run it again.
+        </div>
+      )}
       {selectedQuote && (
         <div className="mb-2 flex items-start justify-between gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs text-brand-800">
           <span className="min-w-0 truncate"><Quote className="mr-1 inline h-3.5 w-3.5" />Selected text is ready to quote into your prompt.</span>
@@ -2159,7 +2284,22 @@ if (data.state) {
                 </button>
                 {showPlanDetails && (
                   <div>
-                    <ExecutionTimeline items={timelineItems} />
+                    
+          {timelineNotes.length > 0 && (
+            <div className="mb-3 space-y-1" aria-label="Instrumentation notes">
+              {timelineNotes.map((note) => (
+                <details key={note.id} className={`rounded-md border px-2 py-1 text-[11px] ${
+                  note.tone === "error" ? "border-rose-200 bg-rose-50 text-rose-800" :
+                  note.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-900" :
+                  note.tone === "accent" ? "border-indigo-200 bg-indigo-50 text-indigo-900" :
+                  "border-slate-200 bg-slate-50 text-slate-500"
+                }`}>
+                  <summary className="cursor-pointer list-none">{note.text}</summary>
+                </details>
+              ))}
+            </div>
+          )}
+<ExecutionTimeline items={timelineItems} />
                     <ol className="space-y-2.5 border-t border-slate-200/80 px-5 py-4">
                     {plan.map((step, i) => {
                       const result = stepResults[i];
@@ -2221,6 +2361,11 @@ if (data.state) {
                 <div className="mb-3 flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-xs font-semibold text-brand-700">
                     <img src="/Onsite48-opt.png" alt="" className="h-4 w-4 object-contain" /> Answer
+                    {currentStatus === "partial" && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                        Partial — hit time/step budget
+                      </span>
+                    )}
                     {responseMode && (
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
                         {responseMode === "quick" ? "Quick" : responseMode === "web_research" ? "Web" : "Autonomous"}
