@@ -310,8 +310,10 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
+    # Probe the task-worker's own heartbeat key (written by consume_forever),
+    # not the proactive-worker key which this process never touches.
     healthcheck:
-      test: ['CMD', 'python', '-c', 'from redis import Redis; import sys; heartbeat = Redis.from_url("redis://redis:6379/0").get("onsite48:proactive_worker:heartbeat"); sys.exit(0 if heartbeat else 1)']
+      test: ['CMD', 'python', '-c', 'from redis import Redis; import sys; heartbeat = Redis.from_url("redis://redis:6379/0").get("onsite48:task_worker:heartbeat"); sys.exit(0 if heartbeat else 1)']
       interval: 30s
       timeout: 5s
       retries: 3
