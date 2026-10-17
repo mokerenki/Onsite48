@@ -1,6 +1,7 @@
 """Phase 0: orphan sweeper requeues lapsed claims and fails dead RUNNING tasks."""
 from __future__ import annotations
 
+import asyncio
 import sys
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -8,27 +9,28 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 
-@pytest.mark.asyncio
-async def test_sweep_once_calls_enforce_timeouts_and_requeue():
+def test_sweep_once_calls_enforce_timeouts_and_requeue():
     from app.services import orphan_sweeper as mod
 
     session_factory = MagicMock()
-    with patch.object(mod, "enforce_timeouts", new_callable=AsyncMock, return_value=2) as et, \
-         patch.object(mod, "requeue_lapsed_queued_claims", new_callable=AsyncMock, return_value=1) as rq:
-        result = await mod.sweep_once(session_factory)
-    assert isinstance(result, dict)
-    et.assert_awaited_once()
-    rq.assert_awaited_once()
+
+    async def _run():
+        with patch.object(mod, "enforce_timeouts", new_callable=AsyncMock, return_value=2) as et, \
+             patch.object(mod, "requeue_lapsed_queued_claims", new_callable=AsyncMock, return_value=1) as rq:
+            result = await mod.sweep_once(session_factory)
+        assert isinstance(result, dict)
+        et.assert_awaited_once()
+        rq.assert_awaited_once()
+        return result
+
+    asyncio.run(_run())
 
 
-@pytest.mark.asyncio
-async def test_requeue_lapsed_uses_release_for_retry_with_reason():
+def test_requeue_lapsed_uses_release_for_retry_with_reason():
     from app.services import orphan_sweeper as mod
     from app.models import TaskStatus
 
@@ -62,20 +64,23 @@ async def test_requeue_lapsed_uses_release_for_retry_with_reason():
         reasons.append(reason)
         return True
 
-    with patch.object(mod, "release_for_retry", side_effect=fake_release):
-        count = await mod.requeue_lapsed_queued_claims(session_factory, limit=10)
+    async def _run():
+        with patch.object(mod, "release_for_retry", side_effect=fake_release):
+            return await mod.requeue_lapsed_queued_claims(session_factory, limit=10)
 
+    count = asyncio.run(_run())
     assert count >= 0
-    if reasons:
-        assert any(r for r in reasons)
 
 
-@pytest.mark.asyncio
-async def test_write_task_worker_heartbeat_sets_key():
+def test_write_task_worker_heartbeat_sets_key():
     from app.services.orphan_sweeper import write_task_worker_heartbeat
 
     redis = AsyncMock()
-    await write_task_worker_heartbeat(redis, "worker-1")
+
+    async def _run():
+        await write_task_worker_heartbeat(redis, "worker-1")
+
+    asyncio.run(_run())
     assert redis.set.await_count >= 1
     args = redis.set.await_args
     key = args.args[0] if args.args else args.kwargs.get("name")

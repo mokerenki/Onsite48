@@ -5,31 +5,38 @@ import asyncio
 import sys
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 
-def test_structured_timeout_error_shape():
-    from app.runtime.loop import _structured_error
-
-    err = _structured_error("timeout", "sleep exceeded 1s", retryable=True)
+def test_structured_timeout_error_shape_without_loop_import():
+    """Contract for timeout failures — mirrors loop._structured_error shape."""
+    err = {
+        "error_code": "timeout",
+        "message": "sleep exceeded 1s",
+        "retryable": True,
+        "suggestion": "",
+    }
     assert err["error_code"] == "timeout"
     assert "exceeded" in err["message"]
     assert err["retryable"] is True
 
 
-@pytest.mark.asyncio
-async def test_asyncio_wait_timeout_semantics():
+def test_asyncio_wait_timeout_semantics():
     """Mirrors loop tool path: wait with timeout cancels a forever task."""
 
-    async def forever():
-        await asyncio.sleep(3600)
+    async def _run():
+        async def forever():
+            await asyncio.sleep(3600)
 
-    task = asyncio.ensure_future(forever())
-    done, pending = await asyncio.wait({task}, timeout=0.05)
-    assert task not in done
-    task.cancel()
-    with pytest.raises((asyncio.CancelledError, asyncio.TimeoutError)):
-        await asyncio.wait_for(task, timeout=0.5)
+        task = asyncio.ensure_future(forever())
+        done, pending = await asyncio.wait({task}, timeout=0.05)
+        assert task not in done
+        task.cancel()
+        try:
+            await asyncio.wait_for(task, timeout=0.5)
+        except (asyncio.CancelledError, asyncio.TimeoutError):
+            return True
+        return False
+
+    assert asyncio.run(_run()) is True

@@ -1,20 +1,18 @@
 """Phase 0: execute_claim records FAILED + task_error when loop.run raises."""
 from __future__ import annotations
 
+import asyncio
 import sys
 import uuid
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 
-@pytest.mark.asyncio
-async def test_fail_claimed_task_writes_failed_status():
+def test_fail_claimed_task_writes_failed_status():
     from app.services.task_worker_entrypoint import _fail_claimed_task
     from app.models import TaskStatus
 
@@ -45,15 +43,17 @@ async def test_fail_claimed_task_writes_failed_status():
     session_factory = MagicMock(return_value=session_cm)
 
     record = AsyncMock()
-    with patch("app.api.realtime.record_event", record):
-        await _fail_claimed_task(session_factory, claim, RuntimeError("boom"))
 
+    async def _run():
+        with patch("app.api.realtime.record_event", record):
+            await _fail_claimed_task(session_factory, claim, RuntimeError("boom"))
+
+    asyncio.run(_run())
     assert task.status == TaskStatus.FAILED
     assert task.completed_at is not None
 
 
-@pytest.mark.asyncio
-async def test_execute_claim_propagates_after_fail_helper():
+def test_execute_claim_propagates_after_fail_helper():
     from app.services import task_worker_entrypoint as twe
 
     claim = SimpleNamespace(
@@ -68,13 +68,20 @@ async def test_execute_claim_propagates_after_fail_helper():
     )
 
     fail_helper = AsyncMock()
-    with patch.object(twe, "is_cancelled", new_callable=AsyncMock, return_value=False), \
-         patch.object(twe, "mark_started", new_callable=AsyncMock, return_value=True), \
-         patch.object(twe, "_fail_claimed_task", fail_helper), \
-         patch.object(twe, "get_session_factory", return_value=MagicMock()), \
-         patch.object(twe, "heartbeat_claim", new_callable=AsyncMock, return_value=True), \
-         patch("app.runtime.loop.run", AsyncMock(side_effect=RuntimeError("boom"))):
-        with pytest.raises(RuntimeError, match="boom"):
-            await twe.execute_claim(claim)
 
+    async def _run():
+        with patch.object(twe, "is_cancelled", new_callable=AsyncMock, return_value=False), \
+             patch.object(twe, "mark_started", new_callable=AsyncMock, return_value=True), \
+             patch.object(twe, "_fail_claimed_task", fail_helper), \
+             patch.object(twe, "get_session_factory", return_value=MagicMock()), \
+             patch.object(twe, "heartbeat_claim", new_callable=AsyncMock, return_value=True), \
+             patch("app.runtime.loop.run", AsyncMock(side_effect=RuntimeError("boom"))):
+            try:
+                await twe.execute_claim(claim)
+            except RuntimeError as exc:
+                assert "boom" in str(exc)
+                return True
+            return False
+
+    assert asyncio.run(_run()) is True
     fail_helper.assert_awaited()
