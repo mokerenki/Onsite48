@@ -53,7 +53,6 @@ const TASK_COLOR_TOKENS: Record<string, { tile: string; icon: string }> = {
 const NAV_ITEMS: NavItem[] = [
   { icon: <Bot className="h-4 w-4" />, label: "Agent", href: "/", badge: "Live" },
   { icon: <Layers3 className="h-4 w-4" />, label: "Workspace", href: "/workspace" },
-  { icon: <Sparkles className="h-4 w-4" />, label: "Marketing Operations", href: "/marketing" },
   { icon: <Calendar className="h-4 w-4" />, label: "Automations", href: "/automations" },
   { icon: <UsersRound className="h-4 w-4" />, label: "Command Center", href: "/command-center" },
   { icon: <Library className="h-4 w-4" />, label: "Source Library", href: "/library" },

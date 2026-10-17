@@ -187,3 +187,114 @@ class InMemoryMemoryStore:
 
 
 __all__ = ["MemoryRecord", "DistillResult", "distill_run", "InMemoryMemoryStore"]
+
+# ---------------------------------------------------------------------------
+# Durable SQL store (Fix 4): same interface as InMemoryMemoryStore.
+# Table is created lazily with IF NOT EXISTS so no Alembic migration is
+# required for this phase; a follow-up migration can formalize it.
+# ---------------------------------------------------------------------------
+import os as _os
+import json as _json
+from typing import Any as _Any
+
+
+class SQLMemoryStore:
+    def __init__(self, session_factory) -> None:
+        self._session_factory = session_factory
+        self._initialized = False
+
+    async def _ensure_table(self) -> None:
+        if self._initialized:
+            return
+        async with self._session_factory() as session:
+            await session.execute(__import__("sqlalchemy").text("""
+                CREATE TABLE IF NOT EXISTS agent_memory_records (
+                    id TEXT PRIMARY KEY,
+                    org_id TEXT NOT NULL,
+                    kind TEXT NOT NULL,
+                    text TEXT NOT NULL,
+                    source_run_id TEXT NOT NULL,
+                    evidence_urls TEXT NOT NULL DEFAULT '[]',
+                    tags TEXT NOT NULL DEFAULT '[]',
+                    confidence REAL NOT NULL DEFAULT 0.5,
+                    created_at REAL NOT NULL
+                )
+            """))
+            await session.commit()
+        self._initialized = True
+
+    async def upsert_many(self, records: list["MemoryRecord"], *, org_id: str = "default") -> int:
+        import time as _time
+        await self._ensure_table()
+        from sqlalchemy import text as _text
+        n = 0
+        async with self._session_factory() as session, session.begin():
+            for r in records:
+                await session.execute(_text("""
+                    INSERT INTO agent_memory_records
+                        (id, org_id, kind, text, source_run_id, evidence_urls, tags, confidence, created_at)
+                    VALUES (:id, :org_id, :kind, :text, :source_run_id, :evidence_urls, :tags, :confidence, :created_at)
+                    ON CONFLICT (id) DO NOTHING
+                """), {
+                    "id": r.id, "org_id": org_id, "kind": r.kind, "text": r.text[:800],
+                    "source_run_id": r.source_run_id,
+                    "evidence_urls": _json.dumps(r.evidence_urls or []),
+                    "tags": _json.dumps(r.tags or []),
+                    "confidence": float(r.confidence), "created_at": float(getattr(r, "created_at", None) or _time.time()),
+                })
+                n += 1
+        return n
+
+    async def search(self, query: str, *, limit: int = 10, org_id: str = "default") -> list["MemoryRecord"]:
+        import re as _re
+        await self._ensure_table()
+        from sqlalchemy import text as _text
+        q_tokens = {t for t in _re.findall(r"[a-z0-9]{3,}", (query or "").lower())}
+        async with self._session_factory() as session:
+            rows = (await session.execute(_text(
+                "SELECT id, kind, text, source_run_id, evidence_urls, tags, confidence, created_at "
+                "FROM agent_memory_records WHERE org_id = :org ORDER BY created_at DESC LIMIT 500"
+            ), {"org": org_id})).mappings().all()
+        scored = []
+        for row in rows:
+            text_tokens = {t for t in _re.findall(r"[a-z0-9]{3,}", str(row["text"]).lower())}
+            score = (len(q_tokens & text_tokens) / max(1, len(q_tokens))) if q_tokens else 0.0
+            if score > 0:
+                scored.append((score * float(row["confidence"]), row))
+        scored.sort(key=lambda x: -x[0])
+        return [MemoryRecord(
+            id=r["id"], kind=r["kind"], text=r["text"], source_run_id=r["source_run_id"],
+            evidence_urls=_json.loads(r["evidence_urls"] or "[]"), tags=_json.loads(r["tags"] or "[]"),
+            confidence=float(r["confidence"]), created_at=float(r["created_at"]),
+        ) for _, r in scored[:limit]]
+
+    async def recent(self, *, limit: int = 5, org_id: str = "default") -> list["MemoryRecord"]:
+        await self._ensure_table()
+        from sqlalchemy import text as _text
+        async with self._session_factory() as session:
+            rows = (await session.execute(_text(
+                "SELECT id, kind, text, source_run_id, evidence_urls, tags, confidence, created_at "
+                "FROM agent_memory_records WHERE org_id = :org ORDER BY created_at DESC LIMIT :lim"
+            ), {"org": org_id, "lim": limit})).mappings().all()
+        return [MemoryRecord(
+            id=r["id"], kind=r["kind"], text=r["text"], source_run_id=r["source_run_id"],
+            evidence_urls=_json.loads(r["evidence_urls"] or "[]"), tags=_json.loads(r["tags"] or "[]"),
+            confidence=float(r["confidence"]), created_at=float(r["created_at"]),
+        ) for r in rows]
+
+
+_memory_store: Any = None  # None = not configured
+
+
+def configure_memory_store(store: Any) -> None:
+    global _memory_store
+    _memory_store = store
+
+
+def get_memory_store() -> Any:
+    if _memory_store is None:
+        _memory_store = InMemoryMemoryStore()
+    return _memory_store
+
+
+__all__ = ["MemoryRecord", "DistillResult", "distill_run", "InMemoryMemoryStore", "SQLMemoryStore", "configure_memory_store", "get_memory_store"]

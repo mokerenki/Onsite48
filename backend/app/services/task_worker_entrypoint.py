@@ -219,6 +219,10 @@ async def run() -> None:
     async with lifespan(app):
         metrics.set("onsite48_worker_running", 1, labels={"worker": WORKER_ID})
 
+        # Fix 4: configure durable SQL memory store at startup
+        from app.runtime.memory_distiller import configure_memory_store, SQLMemoryStore
+        configure_memory_store(SQLMemoryStore(get_session_factory()))
+
         # Phase 0.2: start the orphan sweeper inside the worker process.
         sweeper_stop = asyncio.Event()
         from app.services.orphan_sweeper import start_orphan_sweeper

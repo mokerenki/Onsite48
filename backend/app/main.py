@@ -280,6 +280,8 @@ async def lifespan(app: FastAPI):
     app.state.tool_registry.register(CodeActTool(app.state.model_router, tool_registry=app.state.tool_registry))
     app.state.tool_registry.register(WhatsAppTool())
     app.state.tool_registry.register(MemoryRetrieverTool(app.state.cognee_memory))
+    from app.tools.memory_search_tool import memory_search
+    app.state.tool_registry.register(memory_search())
     app.state.tool_registry.register(CurrentTimeTool())
     app.state.tool_registry.register(EmailTool())
     app.state.tool_registry.register(CalendarTool())
@@ -380,6 +382,10 @@ async def lifespan(app: FastAPI):
     from app.services.signal_engine import get_signal_engine
     _signal_engine = get_signal_engine()
     asyncio.create_task(_signal_engine.initialize())
+
+    # Fix 4: configure durable SQL memory store at startup
+    from app.runtime.memory_distiller import configure_memory_store, SQLMemoryStore
+    configure_memory_store(SQLMemoryStore(get_session_factory()))
 
     yield
 

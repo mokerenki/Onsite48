@@ -75,6 +75,17 @@ DEFAULT_MAX_TOKENS = _env_int("AGENT_MAX_TOKENS", 400_000)
 DEFAULT_MAX_COST_USD = _env_float("AGENT_MAX_COST_USD", 10.0)
 DEFAULT_MAX_WALL_S = _env_float("AGENT_MAX_WALL_S", 1200)
 
+DEFAULT_TOOL_TIMEOUT_S = _env_float("DEFAULT_TOOL_TIMEOUT_S", 120.0)
+
+def _tool_timeout(spec: Any) -> float:
+    """A tool without an explicit timeout must never wait forever."""
+    raw = getattr(spec, "timeout_s", None)
+    try:
+        value = float(raw) if raw is not None else 0.0
+    except (TypeError, ValueError):
+        value = 0.0
+    return value if value > 0 else DEFAULT_TOOL_TIMEOUT_S
+
 # Progress heuristics. Static counters are a blunt instrument: verification
 # loops (build→fix→rebuild) legitimately repeat calls. Budgets above are the
 # real guard; these exist to catch true spinning early.
@@ -95,6 +106,7 @@ _LOOP_SAME_CALL_LIMIT_OVERRIDES: dict[str, int] = {
 ENABLE_PARALLEL_RESEARCH = _os.environ.get("ENABLE_PARALLEL_RESEARCH", "").lower() in ("1", "true", "yes")
 ENABLE_CONTEXT_SUMMARIZATION = _os.environ.get("ENABLE_CONTEXT_SUMMARIZATION", "").lower() in ("1", "true", "yes")
 ENABLE_STRUCTURED_TOOL_RESULTS = _os.environ.get("ENABLE_STRUCTURED_TOOL_RESULTS", "").lower() in ("1", "true", "yes")
+ENABLE_HIERARCHICAL_PLANS = _os.environ.get("ENABLE_HIERARCHICAL_PLANS", "").lower() in ("1", "true", "yes")
 
 # Parallel research tunables
 PARALLEL_BRANCH_CONCURRENCY = _env_int("PARALLEL_BRANCH_CONCURRENCY", 3)
@@ -194,6 +206,43 @@ def _exception_result(exc: Exception) -> dict[str, Any]:
         # Failure serialization must never mask the original tool failure.
         pass
     return _structured_error("tool_error", str(exc), retryable=False)
+
+
+async def _distill_fire_and_forget(*, run_id: str, goal: str, journal: Any,
+                                   finish_payload: dict, org_id: str) -> None:
+    """Phase 8: durable memory distillation. Never blocks the terminal event."""
+    async def _run() -> None:
+        try:
+            from app.runtime.memory_distiller import distill_run, get_memory_store
+            events = []
+            try:
+                events = await journal.list_events(run_id)
+            except Exception:
+                pass
+            result = distill_run(
+                run_id=run_id, goal=goal or "",
+                finish_summary=str(finish_payload.get("summary") or "")[:2000],
+                journal_events=events[-300:],
+                verifier=finish_payload.get("verifier") if isinstance(finish_payload.get("verifier"), dict) else None,
+            )
+            store = get_memory_store()
+            if hasattr(store, "upsert_many"):
+                await store.upsert_many(result.records, org_id=org_id or "default")
+        except Exception as exc:
+            logger.debug("loop.distill_failed", run_id=run_id, error=str(exc)[:150])
+    try:
+        asyncio.create_task(_run())
+    except Exception:
+        pass
+
+
+def _lessons_context_block(lessons: list) -> str | None:
+    if not lessons:
+        return None
+    lines = ["[Prior learnings from completed tasks]"]
+    for r in lessons[:5]:
+        lines.append(f"- ({r.kind}) {r.text[:220]}")
+    return "\n".join(lines)
 
 
 async def _emit_live_event(event_emitter: Any, event: dict[str, Any]) -> None:
@@ -540,7 +589,7 @@ async def _run_readback(
         rb_args = dict(args)
         if isinstance(result, dict):
             rb_args["_prior_result"] = result
-        rb = await asyncio.wait_for(spec.readback(**rb_args), timeout=min(spec.timeout_s, 30))
+        rb = await asyncio.wait_for(spec.readback(**rb_args), timeout=min(_tool_timeout(spec), 30))
         if not isinstance(rb, dict):
             rb = {"verified": False, "observed": {"raw": str(rb)[:500]}, "expected_diff": "non-dict readback"}
         await journal.append(
@@ -1278,6 +1327,15 @@ async def run(
     # Phase 1: Parallel research branch execution — runs once at loop entry
     _parallel_branches_done = False
 
+    # Phase 2 adoption: hierarchical plan awareness (fail-safe, env-gated).
+    _hier_plan_active = False
+    if ENABLE_HIERARCHICAL_PLANS and not parent_run_id and _explicit_depth != "quick":
+        from app.runtime.plan_driver import maybe_create_plan
+        _hier_plan_active = await maybe_create_plan(
+            run_id=run_id, goal=state.goal or goal or "", specs=specs, journal=j,
+            event_emitter=event_emitter, model_override=model_override, model_router=model_router,
+        )
+
     # Live plan tracking: every executed tool call becomes one step the
     # client watches appear and fill in as the run progresses.
     live_plan_steps: list[dict[str, Any]] = []
@@ -1285,6 +1343,16 @@ async def run(
 
     if not state.messages:
         await j.append(run_id, "run_started", {"goal": goal, "role_config": role_config})
+        if _explicit_depth != "quick":
+            try:
+                from app.runtime.memory_distiller import get_memory_store
+                _store = get_memory_store()
+                _lessons = await _store.recent(limit=5, org_id=str((role_config or {}).get("org_id") or tenant_id or "default")) if hasattr(_store, "recent") else []
+                _block = _lessons_context_block(_lessons)
+                if _block:
+                    state.messages.append({"role": "system", "content": _block})
+            except Exception as exc:
+                logger.debug("loop.lessons_inject_failed", error=str(exc)[:150])
 
     logger.info("run.start", run_id=run_id, goal=(goal or "")[:120])
 
@@ -1433,6 +1501,12 @@ async def run(
         messages = context.build(state, specs)
         tool_schemas = specs_for_model(specs)
 
+        if _hier_plan_active:
+            from app.runtime.plan_driver import plan_context_message
+            _plan_msg = plan_context_message(run_id)
+            if _plan_msg is not None:
+                messages = [_plan_msg] + messages
+
         try:
             if forced_approved_call is not None:
                 from types import SimpleNamespace
@@ -1454,6 +1528,9 @@ async def run(
                         role="loop",
                         tool_choice="auto",
                         model_override=model_override,
+                        goal=state.goal or goal,
+                        research_depth=_explicit_depth,
+                        tools_used=sorted(specs.keys()),
                     )
                 )
                 cancel_watcher = asyncio.ensure_future(cancel_event.wait())
@@ -2053,6 +2130,14 @@ async def run(
                             },
                         )
                         await j.append(run_id, "nudge", {"reason": "verifier_reject"})
+                        if _hier_plan_active:
+                            from app.runtime.plan_driver import replan_after_verifier_reject
+                            await replan_after_verifier_reject(
+                                run_id=run_id, goal=state.goal or goal or "",
+                                unmet=terminal.get("unmet_requirements") or [],
+                                specs=specs, journal=j, event_emitter=event_emitter,
+                                model_override=model_override, model_router=model_router,
+                            )
                         continue  # continue the outer while loop via for-break
 
                     final_status = terminal["status"]
@@ -2099,6 +2184,11 @@ async def run(
                     {"call_id": call_id, "name": name, "result": finish_payload},
                 )
                 await j.append(run_id, "run_finished", finish_payload)
+                asyncio.create_task(_distill_fire_and_forget(
+                    run_id=run_id, goal=state.goal or goal or "", journal=j,
+                    finish_payload=finish_payload,
+                    org_id=str((role_config or {}).get("org_id") or tenant_id or "default"),
+                ))
                 await _emit_live_event(event_emitter, {
                     "type": "task_complete",
                     "status": finish_payload["status"],
@@ -2151,6 +2241,9 @@ async def run(
                 recent_calls = recent_calls[-20:]
 
             # ----- Execute -----
+            if _hier_plan_active:
+                from app.runtime.plan_driver import mark_step_running
+                await mark_step_running(run_id=run_id, tool_name=name)
             await j.append(
                 run_id,
                 "tool_call_started",
@@ -2199,7 +2292,7 @@ async def run(
                         done, pending = await asyncio.wait(
                             {tool_task, cancel_watcher},
                             return_when=asyncio.FIRST_COMPLETED,
-                            timeout=spec.timeout_s,
+                            timeout=_tool_timeout(spec),
                         )
                         if cancel_event.is_set() and tool_task not in done:
                             tool_task.cancel()
@@ -2221,7 +2314,7 @@ async def run(
                             tool_task.cancel()
                             result = _structured_error(
                                 "timeout",
-                                f"{name} exceeded {spec.timeout_s}s",
+                                f"{name} exceeded {_tool_timeout(spec)}s",
                                 retryable=True,
                             )
                     finally:
@@ -2235,7 +2328,7 @@ async def run(
                 spec.record_call(False, tool_latency_ms)
                 result = _structured_error(
                     "timeout",
-                    f"{name} exceeded {spec.timeout_s}s",
+                    f"{name} exceeded {_tool_timeout(spec)}s",
                     retryable=True,
                 )
             except TypeError as exc:
@@ -2339,7 +2432,7 @@ async def run(
                     # One automatic retry
                     try:
                         result = await asyncio.wait_for(
-                            spec._execute(**args), timeout=spec.timeout_s
+                            spec._execute(**args), timeout=_tool_timeout(spec)
                         )
                         action = classify_failure(result, tool_name=name)
                     except Exception as exc:
@@ -2521,6 +2614,10 @@ async def run(
                     "output": _tool_result_output(result),
                 },
             })
+            if _hier_plan_active:
+                from app.runtime.plan_driver import advance_plan
+                await advance_plan(run_id=run_id, tool_name=name, ok=(not result.get("error")) if isinstance(result, dict) else False,
+                                   journal=j, event_emitter=event_emitter)
             if event_emitter is not None and isinstance(result, dict):
                 emitted_event = None
                 if name == "preview_website" and isinstance(result.get("preview_url"), str):

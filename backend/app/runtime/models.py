@@ -96,6 +96,32 @@ def _resolve_router(explicit: Any = None) -> Any:
         return None
 
 
+def _decide_strategy(*, role: str, goal: str | None, research_depth: str | None, tools_used: list[str] | None) -> Any:
+    """One strategy decision per call; None means 'keep legacy behavior'."""
+    try:
+        from app.runtime.model_strategy import decide_and_record, infer_signals
+        lane = role if role in ("fast", "verifier", "coder", "browser", "researcher", "planner") else None
+        signals = infer_signals(
+            goal=goal or "",
+            tools_used=tools_used or [],
+            research_depth=research_depth,
+            role_hint=lane or role,
+        )
+        if role in ("verifier", "verification", "summarizer"):
+            signals.is_verification = True
+        if role in ("fast", "intent", "title"):
+            signals.is_classification = True
+        if lane:
+            signals.explicit_lane = lane
+        return decide_and_record(signals)
+    except Exception as exc:
+        import structlog as _structlog
+        _structlog.get_logger("onsite48.models").debug(
+            "runtime.models.strategy_failed", error=str(exc)[:150]
+        )
+        return None
+
+
 async def complete(
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]] | None = None,
@@ -107,20 +133,33 @@ async def complete(
     model_override: str | None = None,
     model: str | None = None,
     model_router: Any = None,
+    # New (Fix 1): richer strategy signals from the caller.
+    goal: str | None = None,
+    research_depth: str | None = None,
+    tools_used: list[str] | None = None,
 ) -> CompleteResult:
     import asyncio as _asyncio
+    decision = _decide_strategy(
+        role=role, goal=goal, research_depth=research_depth, tools_used=tools_used
+    )
+    # The strategy's per-lane timeout is a ceiling below the hard cap:
+    # planner lane 60s, verifier 45s, etc. must actually mean something.
+    effective_timeout = MODEL_CALL_HARD_TIMEOUT_S
+    if decision is not None and getattr(decision, "timeout_s", None):
+        effective_timeout = max(10.0, min(MODEL_CALL_HARD_TIMEOUT_S, float(decision.timeout_s)))
     try:
         return await _asyncio.wait_for(
             _complete_impl(
                 messages, tools, role=role, tool_choice=tool_choice,
                 temperature=temperature, max_tokens=max_tokens,
                 model_override=model_override, model=model, model_router=model_router,
+                _strategy=decision,
             ),
-            timeout=MODEL_CALL_HARD_TIMEOUT_S,
+            timeout=effective_timeout,
         )
     except _asyncio.TimeoutError as exc:
         raise RuntimeError(
-            f"Model call exceeded hard timeout of {MODEL_CALL_HARD_TIMEOUT_S:.0f}s"
+            f"Model call exceeded hard timeout of {effective_timeout:.0f}s"
         ) from exc
 
 
@@ -135,18 +174,21 @@ async def _complete_impl(
     model_override: str | None = None,
     model: str | None = None,
     model_router: Any = None,
+    _strategy: Any = None,
 ) -> CompleteResult:
     tools = tools or []
-    # Workstream B: model strategy defaults (explicit temperature/max_tokens win).
+    # Workstream B (Fix 1): consume the decision made in complete(); fall back
+    # to a local decision if complete() was bypassed (direct _complete_impl calls).
     try:
         from app.runtime.model_strategy import TaskSignals, decide_and_record
-        _lane = role if role in ("fast", "verifier", "coder", "browser", "researcher", "planner") else None
-        signals = TaskSignals(
-            explicit_lane=_lane,
-            is_verification=role in ("verifier", "verification", "summarizer"),
-            is_classification=role in ("fast", "intent", "title"),
-        )
-        decision = decide_and_record(signals)
+        decision = _strategy
+        if decision is None:
+            _lane = role if role in ("fast", "verifier", "coder", "browser", "researcher", "planner") else None
+            decision = decide_and_record(TaskSignals(
+                explicit_lane=_lane,
+                is_verification=role in ("verifier", "verification", "summarizer"),
+                is_classification=role in ("fast", "intent", "title"),
+            ))
         if temperature is None:
             temperature = decision.temperature
         if max_tokens is None:
@@ -158,6 +200,7 @@ async def _complete_impl(
             lane=decision.lane,
             profile=decision.profile,
             timeout_s=decision.timeout_s,
+            reasons=list(decision.reasons),
         )
     except Exception:
         pass

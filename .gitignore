@@ -18,3 +18,6 @@ pgdata/
 htmlcov/
 workspace/
 /tmp/
+*.zip
+*.b64
+*.bak
