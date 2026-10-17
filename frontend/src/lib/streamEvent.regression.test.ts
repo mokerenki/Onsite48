@@ -31,16 +31,16 @@ describe("normalizeStreamEvent", () => {
   });
 
   it("rejects non-object frames", () => {
-    // An array parses cleanly but has no event type; treating it as one is how
-    // an array ends up spread into props downstream.
     expect(normalizeStreamEvent(frame([1, 2, 3])).ok).toBe(false);
     expect(normalizeStreamEvent(frame(null)).ok).toBe(false);
     expect(normalizeStreamEvent(frame("a string")).ok).toBe(false);
   });
 
-  it("drops an unknown event type instead of rendering it by guesswork", () => {
-    const result = normalizeStreamEvent(frame({ type: "task_teleported", timestamp: "t" }));
-    expect(result).toEqual({ ok: false, reason: "unknown event type: task_teleported" });
+  it("accepts an unknown event type as an opaque frame for a muted UI line", () => {
+    const result = normalizeStreamEvent(frame({ type: "task_teleported", timestamp: "t", message: "x" }));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.event.type).toBe("task_teleported");
   });
 
   it("requires an event type", () => {
@@ -56,8 +56,6 @@ describe("normalizeStreamEvent", () => {
   });
 
   it("refuses an array where a record is expected", () => {
-    // typeof [] === "object", so without this check a list is stored as
-    // tool_args and later spread into a props object.
     const result = normalizeStreamEvent(
       frame({ type: "needs_confirmation", timestamp: "t", tool_args: ["a", "b"] })
     );
@@ -103,7 +101,6 @@ describe("appendBounded", () => {
   it("keeps the tail when the accumulated answer exceeds the limit", () => {
     const result = appendBounded("a".repeat(10), "b".repeat(10), 12);
     expect(result.length).toBe(12);
-    // The tail is what matters: the newest text is the answer being streamed.
     expect(result.endsWith("b".repeat(10))).toBe(true);
   });
 });
@@ -179,5 +176,52 @@ describe("narrowResponseMode / narrowTaskStatus / narrowCostMetrics", () => {
     expect(narrowCostMetrics({ total_cost_usd: "free" })).toBeNull();
     expect(narrowCostMetrics({ total_cost_usd: Number.NaN })).toBeNull();
     expect(narrowCostMetrics("0.25")).toBeNull();
+  });
+});
+
+describe("F0+ known backend phase events", () => {
+  it("accepts mode_applied, step_assessment, step_retry, plan_revised", () => {
+    for (const type of ["mode_applied", "step_assessment", "step_retry", "plan_revised"]) {
+      const result = normalizeStreamEvent(frame({ type, research_depth: "deep", step_index: 1, verdict: "partial", attempt: 2 }));
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.event.type).toBe(type);
+    }
+  });
+});
+
+describe("task_complete partial status", () => {
+  it("preserves status partial for badge rendering", () => {
+    const result = normalizeStreamEvent(
+      frame({ type: "task_complete", status: "partial", final_answer: "partial answer" }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.event.status).toBe("partial");
+      expect(result.event.final_answer).toBe("partial answer");
+    }
+  });
+});
+
+describe("task_error catalog fields", () => {
+  it("preserves new error_code values and trace_id", () => {
+    for (const error_code of [
+      "execution_timeout",
+      "worker_execution_failed",
+      "websocket_disconnected",
+      "websocket_closed",
+      "model_configuration_error",
+      "model_error",
+      "resume_checkpoint_missing",
+      "task_context_missing",
+    ]) {
+      const result = normalizeStreamEvent(
+        frame({ type: "task_error", error_code, message: "x", trace_id: "tr-1", retryable: true }),
+      );
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.event.error_code).toBe(error_code);
+        expect(result.event.trace_id).toBe("tr-1");
+      }
+    }
   });
 });
