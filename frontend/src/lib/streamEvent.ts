@@ -15,9 +15,9 @@
  *    `answer_delta` or a 10 MB tool output would be stored in React state
  *    forever.
  *
- * Unknown event types are *dropped with a reason* rather than rendered: a type
- * this build does not understand is a version mismatch, and rendering it by
- * guesswork is how a malformed payload becomes a broken workspace.
+ * Unknown event types are accepted as opaque frames so the timeline can render
+ * a muted generic line. Known types get full field normalization; unknown fields
+ * on any event are ignored.
  */
 
 /** A normalized event, or the reason it was rejected. */
@@ -91,6 +91,11 @@ export interface StreamedEvent {
   is_follow_up?: boolean;
   domain?: string;
   response_mode?: string;
+  research_depth?: string;
+  verdict?: string;
+  confidence?: number;
+  attempt?: number;
+  diff?: Record<string, unknown>;
   mode?: string;
   session_id?: string;
   current_url?: string | null;
@@ -136,6 +141,12 @@ const KNOWN_EVENT_TYPES = new Set([
   "pong",
   "artifact_created",
   "website_preview",
+  "mode_applied",
+  "step_assessment",
+  "step_retry",
+  "plan_revised",
+  "task_state",
+  "task_execution_interrupted",
 ]);
 
 function asString(value: unknown, max = MAX_TEXT_LENGTH): string | undefined {
@@ -164,13 +175,6 @@ function asNumberArray(value: unknown): number[] | undefined {
   return value.filter((item): item is number => typeof item === "number" && Number.isFinite(item));
 }
 
-/**
- * A list of plan-step-shaped records.
- *
- * Elements that are not step-shaped are dropped rather than passed through: the
- * timeline renders `step.description` and `step.tool_name`, and a record missing
- * them would render `undefined` in the user's plan.
- */
 function asRecordArray(value: unknown): Record<string, unknown>[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const records = value
@@ -180,24 +184,11 @@ function asRecordArray(value: unknown): Record<string, unknown>[] | undefined {
   return records.length ? records : undefined;
 }
 
-/**
- * A plain record, or `undefined`.
- *
- * Arrays are rejected deliberately: `typeof [] === "object"`, so without this a
- * list arriving where a `tool_args` record is expected would be stored as an
- * object and spread into a props object somewhere downstream.
- */
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
   return value as Record<string, unknown>;
 }
 
-/**
- * Parse and validate one WebSocket frame.
- *
- * Accepts the raw `MessageEvent.data`, so JSON parsing failures surface here as
- * a rejection rather than as an exception inside a socket handler.
- */
 export function normalizeStreamEvent(raw: unknown): NormalizationResult {
   let payload: unknown = raw;
 
@@ -214,11 +205,9 @@ export function normalizeStreamEvent(raw: unknown): NormalizationResult {
 
   const type = typeof record.type === "string" ? record.type : "";
   if (!type) return { ok: false, reason: "frame has no event type" };
-  if (!KNOWN_EVENT_TYPES.has(type)) {
-    // Not an error the user should see: it is a version mismatch, and the
-    // correct response is to ignore it rather than guess at its shape.
-    return { ok: false, reason: `unknown event type: ${type}` };
-  }
+  // Unknown types are accepted as opaque events so the UI can render a muted
+  // generic line. Known types get full field normalization below.
+  const isKnown = KNOWN_EVENT_TYPES.has(type);
 
   const timestamp = asString(record.timestamp, 64) ?? new Date().toISOString();
 
@@ -252,6 +241,14 @@ export function normalizeStreamEvent(raw: unknown): NormalizationResult {
   assign("is_follow_up", asBoolean(record.is_follow_up));
   assign("domain", asString(record.domain, 64));
   assign("response_mode", asString(record.response_mode, 64));
+  assign("research_depth", asString(record.research_depth, 32));
+  assign("verdict", asString(record.verdict, 32));
+  assign("confidence", asFiniteNumber(record.confidence));
+  assign("attempt", asFiniteNumber(record.attempt));
+  assign("diff", asRecord(record.diff));
+  if (!isKnown) {
+    assign("message", asString(record.message) ?? asString(record.reason) ?? type);
+  }
   assign("mode", asString(record.mode, 64));
   assign("session_id", asString(record.session_id, 128));
   assign("current_observation", asRecord(record.current_observation));
@@ -279,8 +276,6 @@ export function normalizeStreamEvent(raw: unknown): NormalizationResult {
     assign("current_url", record.current_url);
   }
 
-  // `content` carries a different shape per event type, so it is bounded but
-  // not reshaped here; each `case` below validates what it needs.
   if (record.content !== undefined) {
     if (typeof record.content === "string") {
       assign("content", asString(record.content, type === "answer_delta" ? MAX_DELTA_LENGTH : MAX_TEXT_LENGTH));
@@ -292,18 +287,11 @@ export function normalizeStreamEvent(raw: unknown): NormalizationResult {
   return { ok: true, event };
 }
 
-/**
- * Accumulated answer text, bounded.
- *
- * A delta stream is the one place an unbounded payload grows without limit, so
- * the total is capped rather than trusting the peer to stop.
- */
 export function appendBounded(previous: string, delta: string, limit = 400_000): string {
   const combined = previous + delta;
   return combined.length > limit ? combined.slice(combined.length - limit) : combined;
 }
 
-/** Task statuses the workspace has a screen for. */
 const TASK_STATUSES = new Set([
   "idle",
   "connecting",
@@ -317,52 +305,27 @@ const TASK_STATUSES = new Set([
   "error",
 ]);
 
-/**
- * Task status, narrowed to a state the UI actually knows.
- *
- * An unrecognised status is dropped rather than stored, so a version mismatch
- * leaves the workspace showing a known state instead of silently freezing on
- * whatever view it was in.
- */
 export function narrowTaskStatus(value: unknown): string | null {
   return typeof value === "string" && TASK_STATUSES.has(value) ? value : null;
 }
 
-/**
- * Response mode, narrowed to what the UI actually renders.
- *
- * An unrecognised mode is dropped rather than shown: the badges are a fixed set,
- * and passing an arbitrary string through would render a label the product does
- * not have.
- */
 export function narrowResponseMode(value: unknown): "quick" | "web_research" | "autonomous" | null {
   return value === "quick" || value === "web_research" || value === "autonomous" ? value : null;
 }
 
-/** Cost metrics, only when the total is actually a finite number to format. */
 export function narrowCostMetrics(value: unknown): { total_cost_usd?: number } | null {
   const record = asRecord(value);
   if (!record) return null;
   const total = record.total_cost_usd;
-  // A non-numeric or non-finite total is dropped rather than shown: the UI
-  // formats this with `.toFixed(6)`, so NaN would render "NaN" as a price.
   if (total === undefined) return {};
   return typeof total === "number" && Number.isFinite(total) ? { total_cost_usd: total } : null;
 }
 
-/**
- * Plan steps from any untrusted value.
- *
- * Shared by the live `planner_output` path and the `task_resumed` state
- * restore, because both arrive from outside the component and both end up
- * rendered as the user's plan.
- */
 export function narrowPlanSteps(value: unknown): PlanStepRecord[] | null {
   if (!Array.isArray(value)) return null;
   const steps: PlanStepRecord[] = [];
   for (const item of value.slice(0, MAX_LIST_ITEMS)) {
     const record = asRecord(item);
-    // The timeline renders `description`; a step without one is not a step.
     if (!record || typeof record.description !== "string") continue;
     const step: PlanStepRecord = { description: record.description };
     if (typeof record.step_id === "string" || typeof record.step_id === "number") {
@@ -380,7 +343,6 @@ export function narrowPlanSteps(value: unknown): PlanStepRecord[] | null {
   return steps.length ? steps : null;
 }
 
-/** Step results from any untrusted value, keyed by step index. */
 export function narrowStepResults(value: unknown): Record<number, StepResultRecord> | null {
   if (!Array.isArray(value)) return null;
   const results: Record<number, StepResultRecord> = {};
@@ -392,9 +354,6 @@ export function narrowStepResults(value: unknown): Record<number, StepResultReco
     results[index] = {
       step: typeof record.step === "string" ? record.step : "",
       tool: typeof record.tool === "string" ? record.tool : null,
-      // `output` is rendered verbatim. A non-string is stringified rather than
-      // stored as-is so the surface is always text, never an object React will
-      // try to render.
       output:
         typeof record.output === "string"
           ? record.output.slice(0, MAX_TEXT_LENGTH)
@@ -405,13 +364,6 @@ export function narrowStepResults(value: unknown): Record<number, StepResultReco
   return Object.keys(results).length ? results : null;
 }
 
-/**
- * Report artifacts from any untrusted value.
- *
- * `attachment_id` is required because it is what the download button resolves;
- * an artifact without one cannot be acted on and is dropped rather than
- * rendered as a button that does nothing.
- */
 export function narrowReportArtifacts(value: unknown): ReportArtifactRecord[] | null {
   const records = Array.isArray(value)
     ? value.slice(0, MAX_LIST_ITEMS).map((item) => asRecord(item))
