@@ -3,6 +3,9 @@
 Runs on a fresh context with no tools. Checks the *goal outcome* against the
 evidence ledger, now augmented with per-deliverable-type acceptance rubrics —
 the same rigor the del-* eval graders apply, enforced inside the runtime.
+
+Phase 7 adds deterministic claim grounding (claim_grounding.py) after the
+model verdict so load-bearing claims without evidence cannot pass silently.
 """
 from __future__ import annotations
 
@@ -19,14 +22,12 @@ logger = structlog.get_logger("onsite48.runtime.verifier")
 
 MAX_FINISH_ATTEMPTS = 2
 
-# Terminal finish statuses that the verifier respects without re-evaluation.
 TERMINAL_STATES = frozenset(
     ("completed", "completed_unverified", "partial", "needs_input", "waiting_approval", "failed", "cancelled")
 )
 
 
 def user_facing_message(status: str, summary: str) -> str:
-    """Format a summary for user-facing output based on finish status."""
     if status == "failed":
         return f"[Failed] {summary}" if summary else "[Failed] Task failed"
     if status == "cancelled":
@@ -35,14 +36,9 @@ def user_facing_message(status: str, summary: str) -> str:
         return f"[Waiting for approval] {summary}" if summary else "[Waiting for approval]"
     if status == "needs_input":
         return f"[Needs input] {summary}" if summary else "[Needs input] Awaiting user response"
-    # completed, completed_unverified, partial: return summary as-is
     return summary or "Task completed"
 
-# ---------------------------------------------------------------------------
-# Per-deliverable-type rubrics. classify_deliverable() picks one from the
-# goal; its checklist is injected into the verifier's prompt so the verdict
-# is judged against concrete acceptance criteria, not vibes.
-# ---------------------------------------------------------------------------
+
 RUBRICS: dict[str, dict[str, Any]] = {
     "research": {
         "signals": ("research", "compare", "list the top", "find ", "who are", "market", "vendors", "options"),
@@ -122,7 +118,6 @@ FALLBACK_RUBRIC = (
 
 
 def classify_deliverable(goal: str) -> tuple[str, str]:
-    """Return (deliverable_type, rubric_text) for the goal."""
     g = (goal or "").lower()
     best, best_hits = None, 0
     for dtype, spec in RUBRICS.items():
@@ -277,12 +272,26 @@ async def verify_completion(
         parsed = _parse_verdict(result.content)
         parsed["model"] = result.model
         parsed["cost_usd"] = result.cost_usd
+        # Phase 7: deterministic claim grounding against the evidence ledger.
+        try:
+            from app.runtime.claim_grounding import ground_claims, merge_claim_report_into_verdict
+
+            claim_report = ground_claims(
+                finish_summary,
+                journal_events=journal_events,
+                key_results=key_results,
+                artifacts=artifacts,
+            )
+            parsed = merge_claim_report_into_verdict(parsed, claim_report)
+        except Exception as claim_exc:
+            logger.warning("runtime.verifier.claim_grounding_failed", error=str(claim_exc)[:200])
         logger.info(
             "runtime.verifier.done",
             verdict=parsed["verdict"],
             unmet=len(parsed["unmet_requirements"]),
             missing=len(parsed["missing_evidence"]),
             rubric_checks=len(parsed["rubric_checks"]),
+            claim_coverage=(parsed.get("claim_grounding") or {}).get("coverage"),
         )
         return parsed
     except Exception as exc:
@@ -335,11 +344,6 @@ def apply_verdict_to_terminal(
         }
 
     if v == "fail":
-        # Research deliverables: partial coverage is acceptable (see the
-        # research rubric). A "fail" here usually means "not every
-        # sub-question answered" or "single-source facts" — which is
-        # exactly completed_unverified. Downgrade instead of forcing a
-        # re-research loop over already-collected evidence.
         dtype, _rubric = classify_deliverable(goal)
         retrievals = count_successful_retrievals(key_results or [])
         if dtype == "research" or is_research_goal(goal):
