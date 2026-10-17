@@ -1,9 +1,4 @@
-"""Phase 9 — Run artifact packaging.
-
-Collects workspace outputs and finish metadata into a structured artifact
-manifest the API / UI can list and download. Complements artifact_contract
-and artifact_versions services.
-"""
+"""Phase 9 — Run artifact packaging."""
 from __future__ import annotations
 
 import hashlib
@@ -21,7 +16,7 @@ class ArtifactItem:
     size_bytes: int
     content_type: str
     sha256: str
-    kind: str = "file"  # file | log | preview | package
+    kind: str = "file"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -36,6 +31,14 @@ class ArtifactManifest:
     finish_status: str = ""
     finish_summary: str = ""
 
+    @property
+    def count(self) -> int:
+        return len(self.items)
+
+    @property
+    def total_bytes(self) -> int:
+        return sum(i.size_bytes for i in self.items)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "run_id": self.run_id,
@@ -45,7 +48,7 @@ class ArtifactManifest:
             "finish_summary": self.finish_summary[:2000],
             "items": [i.to_dict() for i in self.items],
             "count": len(self.items),
-            "total_bytes": sum(i.size_bytes for i in self.items),
+            "total_bytes": self.total_bytes,
         }
 
 
@@ -72,7 +75,6 @@ def collect_workspace_artifacts(
     max_files: int = 100,
     max_file_bytes: int = 20_000_000,
 ) -> ArtifactManifest:
-    """Scan a workspace directory and build an artifact manifest."""
     root = Path(workspace_root)
     manifest = ArtifactManifest(
         run_id=run_id,
@@ -102,7 +104,7 @@ def collect_workspace_artifacts(
         lower = path.name.lower()
         if lower.endswith((".png", ".jpg", ".jpeg", ".webp")):
             kind = "preview"
-        elif lower.endswith((".log", ".txt")) and "log" in lower:
+        elif "log" in lower and lower.endswith((".log", ".txt")):
             kind = "log"
         elif lower.endswith((".zip", ".tar", ".gz")):
             kind = "package"
@@ -133,7 +135,6 @@ def manifest_from_paths(
     goal: str = "",
     base: str | Path | None = None,
 ) -> ArtifactManifest:
-    """Build a manifest from explicit relative/absolute paths."""
     base_path = Path(base) if base else None
     manifest = ArtifactManifest(run_id=run_id, goal=goal or "")
     for p in paths:
@@ -161,9 +162,4 @@ def manifest_from_paths(
     return manifest
 
 
-__all__ = [
-    "ArtifactItem",
-    "ArtifactManifest",
-    "collect_workspace_artifacts",
-    "manifest_from_paths",
-]
+__all__ = ["ArtifactItem", "ArtifactManifest", "collect_workspace_artifacts", "manifest_from_paths"]
