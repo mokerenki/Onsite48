@@ -14,7 +14,7 @@ from typing import Any, Literal
 
 MemoryKind = Literal["fact", "procedure", "preference", "open_question"]
 
-_URL_RE = re.compile(r'https?://[^\s)\]>\"']+', re.I)
+_URL_RE = re.compile(r"https?://\S+", re.I)
 
 
 @dataclass
@@ -76,7 +76,13 @@ def distill_run(
     skipped = 0
     seen: set[str] = set()
 
-    def _add(kind: MemoryKind, text: str, urls: list[str] | None = None, tags: list[str] | None = None, confidence: float = 0.5) -> None:
+    def _add(
+        kind: MemoryKind,
+        text: str,
+        urls: list[str] | None = None,
+        tags: list[str] | None = None,
+        confidence: float = 0.5,
+    ) -> None:
         nonlocal skipped
         text = (text or "").strip()
         if len(text) < 20:
@@ -147,7 +153,9 @@ def distill_run(
         for u in list(verifier.get("unmet_requirements") or [])[:5]:
             _add("open_question", f"Unmet: {u}", tags=["verifier"], confidence=0.8)
 
-    return DistillResult(run_id=run_id, goal=goal or "", records=records[:max_records], skipped=skipped)
+    return DistillResult(
+        run_id=run_id, goal=goal or "", records=records[:max_records], skipped=skipped
+    )
 
 
 class InMemoryMemoryStore:
