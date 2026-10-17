@@ -4,17 +4,14 @@ Deterministic pre-check used alongside the model-backed completion verifier.
 
 Extracts atomic claims from a finish summary and scores whether each claim is
 grounded in evidence drawn from the journal / tool results / URLs.
-
-This does not replace `verify_completion`; it supplies structured claim-level
-signal the loop and auditors can trust without an LLM.
 """
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-# Sentences that are not load-bearing claims.
 _HEDGE_PREFIXES = (
     "i think",
     "maybe",
@@ -25,7 +22,8 @@ _HEDGE_PREFIXES = (
     "sorry",
 )
 
-_URL_RE = re.compile(r"https?://[^\s)\]>"]+", re.I)
+# Use single-quoted raw string so " can appear in the character class.
+_URL_RE = re.compile(r'https?://[^\s)\]>"]+', re.I)
 _SENTENCE_RE = re.compile(r"(?<=[.!?])\s+|(?<=\n)")
 
 
@@ -45,8 +43,8 @@ class ClaimReport:
     claims: list[Claim]
     grounded_count: int
     ungrounded_count: int
-    coverage: float  # grounded / total, or 1.0 if no claims
-    verdict: str  # pass | fail | unverifiable
+    coverage: float
+    verdict: str
     notes: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -61,11 +59,9 @@ class ClaimReport:
 
 
 def extract_claims(summary: str, *, max_claims: int = 12) -> list[str]:
-    """Split a finish summary into atomic claim-like sentences."""
     if not summary or not str(summary).strip():
         return []
     text = str(summary).strip()
-    # Prefer line bullets
     lines = [ln.strip(" -*\t") for ln in text.splitlines() if ln.strip()]
     candidates: list[str] = []
     if len(lines) > 1:
@@ -81,13 +77,19 @@ def extract_claims(summary: str, *, max_claims: int = 12) -> list[str]:
         low = c.lower()
         if any(low.startswith(h) for h in _HEDGE_PREFIXES):
             continue
-        # Skip pure questions
         if c.endswith("?"):
             continue
         claims.append(c[:400])
         if len(claims) >= max_claims:
             break
     return claims
+
+
+def json_safe(obj: Any) -> str:
+    try:
+        return json.dumps(obj, default=str)
+    except Exception:
+        return str(obj)
 
 
 def _evidence_corpus(
@@ -97,7 +99,6 @@ def _evidence_corpus(
     artifacts: list[dict[str, Any]] | None = None,
     extra_urls: list[str] | None = None,
 ) -> tuple[str, list[str]]:
-    """Build a lowercase text corpus and URL list from evidence sources."""
     chunks: list[str] = []
     urls: list[str] = []
 
@@ -136,17 +137,7 @@ def _evidence_corpus(
             if isinstance(p, str):
                 chunks.append(p.lower())
 
-    corpus = "\n".join(chunks).lower()
-    return corpus, urls
-
-
-def json_safe(obj: Any) -> str:
-    try:
-        import json
-
-        return json.dumps(obj, default=str)
-    except Exception:
-        return str(obj)
+    return "\n".join(chunks).lower(), urls
 
 
 def _tokens(text: str) -> set[str]:
@@ -154,34 +145,26 @@ def _tokens(text: str) -> set[str]:
 
 
 def ground_claim(claim: str, corpus: str, urls: list[str]) -> Claim:
-    """Determine if a single claim is grounded in corpus/urls."""
     claim_urls = _URL_RE.findall(claim)
     matched_urls = [u for u in claim_urls if any(u.rstrip(".,;") in uu for uu in urls)]
-    # URL in claim that appears in evidence
     if claim_urls and matched_urls:
         return Claim(text=claim, grounded=True, evidence_refs=matched_urls[:5], reason="url_match")
 
-    # Overlap of content tokens with corpus
     ct = _tokens(claim)
     if not ct:
         return Claim(text=claim, grounded=False, reason="empty_tokens")
 
-    # Direct substring of a significant noun phrase (first 8 tokens joined)
-    snippet = " ".join(list(ct)[:8])
-    # Better: check fraction of claim tokens present in corpus
     hits = sum(1 for t in ct if t in corpus)
     ratio = hits / max(1, len(ct))
 
-    # Numbers in claim should appear in corpus when present
     numbers = re.findall(r"\b\d+(?:\.\d+)?%?\b", claim)
     number_ok = all(n.lower() in corpus for n in numbers) if numbers else True
 
     if ratio >= 0.45 and number_ok:
-        refs = [u for u in urls[:3]]
         return Claim(
             text=claim,
             grounded=True,
-            evidence_refs=refs,
+            evidence_refs=urls[:3],
             reason=f"token_overlap:{ratio:.2f}",
         )
 
@@ -204,7 +187,6 @@ def ground_claims(
     evidence_urls: list[str] | None = None,
     min_coverage: float = 0.5,
 ) -> ClaimReport:
-    """Ground all claims in summary against evidence."""
     claims_text = extract_claims(summary)
     corpus, urls = _evidence_corpus(
         journal_events=journal_events,
@@ -214,7 +196,6 @@ def ground_claims(
     )
 
     if not claims_text:
-        # No extractable claims — treat as unverifiable rather than pass
         return ClaimReport(
             claims=[],
             grounded_count=0,
@@ -224,26 +205,19 @@ def ground_claims(
             notes="no_claims_extracted",
         )
 
-    grounded: list[Claim] = []
-    for c in claims_text:
-        grounded.append(ground_claim(c, corpus, urls))
-
+    grounded = [ground_claim(c, corpus, urls) for c in claims_text]
     ok = sum(1 for c in grounded if c.grounded)
     bad = len(grounded) - ok
     coverage = ok / len(grounded)
 
     if not corpus and not urls:
-        verdict = "unverifiable"
-        notes = "no_evidence_corpus"
+        verdict, notes = "unverifiable", "no_evidence_corpus"
     elif coverage >= min_coverage and bad == 0:
-        verdict = "pass"
-        notes = "all_claims_grounded"
+        verdict, notes = "pass", "all_claims_grounded"
     elif coverage >= min_coverage:
-        verdict = "pass"
-        notes = "coverage_threshold_met"
+        verdict, notes = "pass", "coverage_threshold_met"
     else:
-        verdict = "fail"
-        notes = "coverage_below_threshold"
+        verdict, notes = "fail", "coverage_below_threshold"
 
     return ClaimReport(
         claims=grounded,
@@ -259,11 +233,8 @@ def merge_claim_report_into_verdict(
     verdict: dict[str, Any],
     report: ClaimReport,
 ) -> dict[str, Any]:
-    """Attach claim report; downgrade model verdict when claims fail hard."""
     out = dict(verdict or {})
     out["claim_grounding"] = report.to_dict()
-
-    # Only escalate severity — never upgrade fail → pass via claims alone
     model_v = str(out.get("verdict") or "unverifiable")
     if report.verdict == "fail" and model_v == "pass":
         out["verdict"] = "fail"
@@ -272,12 +243,10 @@ def merge_claim_report_into_verdict(
             if not c.grounded:
                 missing.append(f"ungrounded_claim: {c.text[:120]}")
         out["missing_evidence"] = missing[:20]
-        notes = str(out.get("notes") or "")
-        out["notes"] = (notes + " | claim_grounding_failed").strip(" |")
+        out["notes"] = (str(out.get("notes") or "") + " | claim_grounding_failed").strip(" |")
     elif report.verdict == "unverifiable" and model_v == "pass" and report.notes == "no_evidence_corpus":
         out["verdict"] = "unverifiable"
         out["notes"] = (str(out.get("notes") or "") + " | no_evidence_for_claims").strip(" |")
-
     return out
 
 
